@@ -1,1 +1,2 @@
-# EventLogLoader
+<h2>Периодическая загрузка событий из журналов регистрации в базу MS SQL Server</h2>
+Описание http://infostart.ru/public/182820/
