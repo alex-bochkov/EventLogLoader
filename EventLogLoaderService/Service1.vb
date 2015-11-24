@@ -685,7 +685,12 @@ Public Class EventLogLoaderService
                         command.Parameters.Add(New SqlParameter("@v9", SqlDbType.Char)).Value = Ev.EventType
                         command.Parameters.Add(New SqlParameter("@v10", SqlDbType.VarChar)).Value = Ev.Comment
                         command.Parameters.Add(New SqlParameter("@v11", SqlDbType.Int)).Value = Ev.MetadataID
+
+                        If Ev.DataStructure.Length > 100 Then
+                            Ev.DataStructure = Ev.DataStructure.Substring(0, 99)
+                        End If
                         command.Parameters.Add(New SqlParameter("@v12", SqlDbType.Char)).Value = Ev.DataStructure
+
                         command.Parameters.Add(New SqlParameter("@v13", SqlDbType.VarChar)).Value = Ev.DataString
                         command.Parameters.Add(New SqlParameter("@v14", SqlDbType.Int)).Value = Ev.ServerID
                         command.Parameters.Add(New SqlParameter("@v15", SqlDbType.Int)).Value = Ev.MainPortID
@@ -1226,7 +1231,15 @@ Public Class EventLogLoaderService
                         OneEvent.EventID = rs("eventCode")
                         OneEvent.Comment = rs("comment")
                         'OneEvent.MetadataID = rs("metadataCodes")
-                        OneEvent.MetadataID = 0
+                        Dim MDCodes As String = rs("metadataCodes")
+                        If String.IsNullOrEmpty(MDCodes) Then
+                            OneEvent.MetadataID = 0
+                        ElseIf MDCodes.Contains(",") Then
+                            Dim MDCode As String = MDCodes.Split(New Char() {","c}).GetValue(0)
+                            Integer.TryParse(MDCode, OneEvent.MetadataID)
+                        Else
+                            Integer.TryParse(MDCodes, OneEvent.MetadataID)
+                        End If
 
                         Dim s = ""
                         If Not String.IsNullOrEmpty(rs("data")) Then
