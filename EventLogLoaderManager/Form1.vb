@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Management
 Imports System.Data.SqlClient
 Imports MySql.Data.MySqlClient
+Imports System.Net
 
 Public Class Form1
 
@@ -140,7 +141,7 @@ Public Class Form1
         Dim sc = New System.ServiceProcess.ServiceController("EventLog loader service")
         Try
             If sc.Status = ServiceProcess.ServiceControllerStatus.Running Then
-                If MsgBox("Параметры успешно изменены, но служба в настоящий момент работает." + _
+                If MsgBox("Параметры успешно изменены, но служба в настоящий момент работает." +
                           vbNewLine + "Перезапустить службу для применения изменений?", MsgBoxStyle.YesNo, Text) = MsgBoxResult.Yes Then
                     sc.Stop()
                     sc.WaitForStatus(ServiceProcess.ServiceControllerStatus.Stopped)
@@ -322,7 +323,7 @@ Public Class Form1
 
                     Try
                         If a.StartsWith("[") And a.EndsWith("]") Then
-                            If Not Infobase.GUID = Nothing And _
+                            If Not Infobase.GUID = Nothing And
                                 Not Infobase.CatalogEventLog Is Nothing Then
                                 Result.Add(Infobase)
                             End If
@@ -393,11 +394,16 @@ Public Class Form1
                 command.ExecuteReader()
             ElseIf DBType.Text = "ElasticSearch" Then
 
+                Dim _WebRequest As System.Net.WebRequest = System.Net.WebRequest.Create(ConnectionStringBox.Text.Trim)
+                Dim Resp As HttpWebResponse = _WebRequest.GetResponse()
 
-
+                If Not Resp.StatusCode = HttpStatusCode.OK Then
+                    Throw New System.Exception("Expected responce code 200. Status code returned: " + Resp.StatusCode.ToString)
+                End If
             End If
 
             MsgBox("Подключение выполнено успешно!", , Text)
+
         Catch ex As Exception
             MsgBox("Ошибка при подключении: " + ex.Message, , Text)
         End Try
