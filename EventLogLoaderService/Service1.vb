@@ -519,8 +519,9 @@ Public Class EventLogLoaderService
         Public LastEventNumber83 As Integer = 0
 
         Public ConnectionString As String
-        Public ItIsMSSQL As String
-        Public ItIsMySQL As String
+        Public ItIsMSSQL As Boolean
+        Public ItIsMySQL As Boolean
+        Public ItIsES As Boolean
 
         Sub CreateStr(ByRef Str As String, LastLvl As Integer, Arr() As Object)
 

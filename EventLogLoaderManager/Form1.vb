@@ -386,11 +386,15 @@ Public Class Form1
                 objConn.Open()
                 Dim command As New MySqlCommand("SELECT 1", objConn)
                 command.ExecuteReader()
-            Else
+            ElseIf DBType.Text = "MSSQL" Then
                 Dim objConn As New SqlConnection(ConnectionStringBox.Text.Trim)
                 objConn.Open()
                 Dim command As New SqlCommand("SELECT 1", objConn)
                 command.ExecuteReader()
+            ElseIf DBType.Text = "ElasticSearch" Then
+
+
+
             End If
 
             MsgBox("Подключение выполнено успешно!", , Text)
@@ -492,6 +496,5 @@ Public Class Form1
 
 
     End Sub
-
 
 End Class
