@@ -8,19 +8,19 @@ Imports System.Runtime.InteropServices
 
 ' Проверьте значения атрибутов сборки
 
-<Assembly: AssemblyTitle("Загрузчик файлов ЖР в СУБД")> 
-<Assembly: AssemblyDescription("Загрузчик файлов журналов регистрации в БД MS SQL Server или MySQL" + _
-             vbNewLine + "" + _
-             vbNewLine + "Обнаруженные ошибки, а также предложения оставляйте в комментариях к публикации на Инфостарте http://infostart.ru/public/182820/. ")> 
-<Assembly: AssemblyCompany("Aleksey Bochkov")> 
-<Assembly: AssemblyProduct("Загрузчик файлов ЖР в СУБД")> 
-<Assembly: AssemblyCopyright("Copyright © Aleksey Bochkov, 2015")> 
-<Assembly: AssemblyTrademark("Aleksey Bochkov")> 
+<Assembly: AssemblyTitle("Загрузчик файлов ЖР во внешнюю базу данных")>
+<Assembly: AssemblyDescription("Загрузчик файлов журналов регистрации в БД MS SQL Server, MySQL или ElasticSearch" +
+             vbNewLine + "" +
+             vbNewLine + "Обнаруженные ошибки, а также предложения оставляйте в комментариях к публикации на Инфостарте http://infostart.ru/public/182820/. ")>
+<Assembly: AssemblyCompany("Alexey Bochkov")>
+<Assembly: AssemblyProduct("Загрузчик файлов ЖР во внешнюю базу данных")>
+<Assembly: AssemblyCopyright("Copyright © Alexey Bochkov, 2017")>
+<Assembly: AssemblyTrademark("Alexey Bochkov")>
 
 <Assembly: ComVisible(False)>
 
 'Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
-<Assembly: Guid("e5075ead-dc12-4b01-a1ca-f5beb4a45ff9")> 
+<Assembly: Guid("e5075ead-dc12-4b01-a1ca-f5beb4a45ff9")>
 
 ' Сведения о версии сборки состоят из следующих четырех значений:
 '
@@ -33,5 +33,5 @@ Imports System.Runtime.InteropServices
 ' используя "*", как показано ниже:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("1.1.2.1")> 
-<Assembly: AssemblyFileVersion("1.1.2.1")> 
+<Assembly: AssemblyVersion("2.0.0.1")>
+<Assembly: AssemblyFileVersion("2.0.0.1")>

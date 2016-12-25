@@ -138,7 +138,7 @@ Partial Class AboutBox
         Me.TextBoxDescription.Size = New System.Drawing.Size(257, 123)
         Me.TextBoxDescription.TabIndex = 0
         Me.TextBoxDescription.TabStop = False
-        Me.TextBoxDescription.Text = "Описание:" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "(Во время выполнения текст подписи будет заменен информацией о сборк" & _
+        Me.TextBoxDescription.Text = "Описание:" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "(Во время выполнения текст подписи будет заменен информацией о сборк" &
     "е приложения." & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "Настроить эту информацию можно в области "
         '
         'OKButton

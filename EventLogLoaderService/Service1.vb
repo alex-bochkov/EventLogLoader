@@ -3,6 +3,7 @@ Imports System.Globalization
 Imports System.Data.SqlClient
 Imports System.IO
 Imports MySql.Data.MySqlClient
+Imports Nest
 
 Public Class EventLogLoaderService
 
@@ -65,6 +66,7 @@ Public Class EventLogLoaderService
         Public ConnectionString As String
         Public ItIsMSSQL As Boolean = False
         Public ItIsMySQL As Boolean = False
+        Public ItIsES As Boolean = False
 
         Public LastUpdate As DateTime
 
@@ -483,31 +485,30 @@ Public Class EventLogLoaderService
 
     Class EventLogLoader
 
-        Structure OneEvent
-            Dim RowID As Integer
-            Dim DateTime As Date
-            'Dim RecordType As String
-            Dim TransactionStatus As String
-            Dim Transaction As String
-            Dim TransactionStartTime As Date
-            Dim TransactionMark As Int64
-            Dim UserName As Integer
-            Dim ComputerName As Integer
-            Dim AppName As Integer
-            Dim Field2 As String
-            Dim EventID As Integer
-            Dim EventType As String
-            Dim Comment As String
-            Dim MetadataID As Integer
-            Dim DataStructure As String
-            Dim DataString As String
-            Dim ServerID As Integer
-            Dim MainPortID As Integer
-            Dim SecondPortID As Integer
-            Dim Seance As Integer
-            Dim Field7 As String
-            Dim Field8 As String
-        End Structure
+        Class OneEvent
+            Public RowID As Integer
+            Public DateTime As Date
+            Public TransactionStatus As String
+            Public Transaction As String
+            Public TransactionStartTime As Date
+            Public TransactionMark As Int64
+            Public UserName As Integer
+            Public ComputerName As Integer
+            Public AppName As Integer
+            Public Field2 As String
+            Public EventID As Integer
+            Public EventType As String
+            Public Comment As String
+            Public MetadataID As Integer
+            Public DataStructure As String
+            Public DataString As String
+            Public ServerID As Integer
+            Public MainPortID As Integer
+            Public SecondPortID As Integer
+            Public Seance As Integer
+            Public Field7 As String
+            Public Field8 As String
+        End Class
 
         Public Events As List(Of OneEvent) = New List(Of OneEvent)
         Public CurrentPosition As Int64 = 0
@@ -594,11 +595,7 @@ Public Class EventLogLoaderService
         Public Sub AddEvent(Str As String)
 
             Dim provider As CultureInfo = CultureInfo.InvariantCulture
-            Dim OneEvent = New OneEvent
-
-            'If Not Events(0).DateTime = Nothing Then
-            '    ReDim Preserve Events(Events.Length)
-            'End If
+            Dim OneEvent As OneEvent = New OneEvent
 
             Dim Array = ParserServices.ParseEventlogString(Str)
             OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
@@ -662,9 +659,9 @@ Public Class EventLogLoaderService
                 Dim command As New SqlCommand("BEGIN TRANSACTION", objConn)
                 command.ExecuteNonQuery()
 
-                command.CommandText = "INSERT INTO [dbo].[Events] ([InfobaseCode],[DateTime],[TransactionStatus],[Transaction],[UserName],[ComputerName]" + _
-                                          ",[AppName],[Field2],[EventID],[EventType],[Comment],[MetadataID],[DataStructure],[DataString]" + _
-                                          ",[ServerID],[MainPortID],[SecondPortID],[Seance],[Field7],[Field8],[TransactionStartTime],[TransactionMark])" + _
+                command.CommandText = "INSERT INTO [dbo].[Events] ([InfobaseCode],[DateTime],[TransactionStatus],[Transaction],[UserName],[ComputerName]" +
+                                          ",[AppName],[Field2],[EventID],[EventType],[Comment],[MetadataID],[DataStructure],[DataString]" +
+                                          ",[ServerID],[MainPortID],[SecondPortID],[Seance],[Field7],[Field8],[TransactionStartTime],[TransactionMark])" +
                                           " VALUES(@v0,@v1,@v2,@v3,@v4,@v5,@v6,@v7,@v8,@v9,@v10,@v11,@v12,@v13,@v14,@v15,@v16,@v17,@v18,@v19,@v20,@v21)"
 
                 Dim i = 0
@@ -705,7 +702,7 @@ Public Class EventLogLoaderService
                         command.ExecuteNonQuery()
                         i += 1
                     Catch ex As Exception
-                        Log.Error("Ошибка сохранения в БД записи от " + Ev.DateTime.ToString + _
+                        Log.Error("Ошибка сохранения в БД записи от " + Ev.DateTime.ToString +
                                            " по ИБ " + InfobaseName + " : " + ex.Message)
                     End Try
 
@@ -714,8 +711,8 @@ Public Class EventLogLoaderService
 
                 Console.WriteLine(Now.ToShortTimeString + " Записано новых событий в базу " + i.ToString)
 
-                command.CommandText = "IF NOT EXISTS (select * from [dbo].[Params] where [InfobaseCode] = @v3) " + _
-                                    "INSERT INTO [dbo].[Params] ([InfobaseCode], [Position], [Filename], [LastEventID]) VALUES(@v3,@v1,@v2,@v4) " + _
+                command.CommandText = "IF NOT EXISTS (select * from [dbo].[Params] where [InfobaseCode] = @v3) " +
+                                    "INSERT INTO [dbo].[Params] ([InfobaseCode], [Position], [Filename], [LastEventID]) VALUES(@v3,@v1,@v2,@v4) " +
                                     "ELSE UPDATE [dbo].[Params] SET [Position] = @v1, [Filename] = @v2, [LastEventID] = @v4 WHERE [InfobaseCode] = @v3"
 
                 command.Parameters.Clear()
@@ -741,9 +738,9 @@ Public Class EventLogLoaderService
                 Dim command As New MySqlCommand("START TRANSACTION", objConn)
                 command.ExecuteNonQuery()
 
-                command.CommandText = "INSERT INTO `Events` (`InfobaseCode`,`DateTime`,`TransactionStatus`,`Transaction`,`UserName`,`ComputerName`" + _
-                                          ",`AppName`,`Field2`,`EventID`,`EventType`,`Comment`,`MetadataID`,`DataStructure`,`DataString`" + _
-                                          ",`ServerID`,`MainPortID`,`SecondPortID`,`Seance`,`Field7`,`Field8`,`TransactionStartTime`,`TransactionMark`)" + _
+                command.CommandText = "INSERT INTO `Events` (`InfobaseCode`,`DateTime`,`TransactionStatus`,`Transaction`,`UserName`,`ComputerName`" +
+                                          ",`AppName`,`Field2`,`EventID`,`EventType`,`Comment`,`MetadataID`,`DataStructure`,`DataString`" +
+                                          ",`ServerID`,`MainPortID`,`SecondPortID`,`Seance`,`Field7`,`Field8`,`TransactionStartTime`,`TransactionMark`)" +
                                           " VALUES(@v0,@v1,@v2,@v3,@v4,@v5,@v6,@v7,@v8,@v9,@v10,@v11,@v12,@v13,@v14,@v15,@v16,@v17,@v18,@v19,@v20,@v21)"
 
                 Dim i = 0
@@ -779,7 +776,7 @@ Public Class EventLogLoaderService
                         command.ExecuteNonQuery()
                         i += 1
                     Catch ex As Exception
-                        Log.Error("Ошибка сохранения в БД записи от " + Ev.DateTime.ToString + _
+                        Log.Error("Ошибка сохранения в БД записи от " + Ev.DateTime.ToString +
                                            " по ИБ " + InfobaseName + " : " + ex.Message)
                     End Try
 
@@ -804,6 +801,29 @@ Public Class EventLogLoaderService
                 command.Dispose()
                 objConn.Close()
                 objConn.Dispose()
+
+            ElseIf ItIsES Then
+
+                Dim Index = "event-log-ibguid"
+                Dim node = New Uri(ConnectionString)
+
+                Dim _settings = New ConnectionSettings(node).DefaultIndex(Index).MaximumRetries(2).MaxRetryTimeout(TimeSpan.FromSeconds(150))
+                Dim _current = New ElasticClient(_settings)
+
+                'Dim elasticsearchMappingResolver As IElasticsearchMappingResolver = New ElasticsearchMappingResolver()
+                'elasticsearchMappingResolver.AddElasticSearchMappingForEntityType(TypeOf (), New ElasticsearchMappingTestDto());
+                'Dim context = New ElasticsearchContext(ConnectionString, New ElasticsearchSerializerConfiguration(elasticsearchMappingResolver, True, True))
+
+
+                'Dim descriptor = New BulkDescriptor()
+                'For Each item In Events
+                '    '    descriptor.Index(Of OneEvent)(Function(op) op.Document(item))
+                'Next
+                'Dim result = _current.Bulk(descriptor)
+
+                Dim Result = _current.IndexMany(Events, Index, "event-record")
+
+                Dim a = 0
 
             End If
 
@@ -874,6 +894,7 @@ Public Class EventLogLoaderService
         Public ConnectionString As String
         Public ItIsMSSQL As Boolean = False
         Public ItIsMySQL As Boolean = False
+        Public ItIsES As Boolean = False
         Public Guid As String
         Public ID As Integer = 0
         Public Reference As ReferenceClass
@@ -982,6 +1003,7 @@ Public Class EventLogLoaderService
             Events.Log = Log
             Events.ItIsMSSQL = ItIsMSSQL
             Events.ItIsMySQL = ItIsMySQL
+            Events.ItIsES = ItIsES
             Events.GetParamFromSQL()
 
         End Sub
@@ -1410,6 +1432,7 @@ Public Class EventLogLoaderService
                 Reference.ConnectionString = ConnectionString
                 Reference.ItIsMSSQL = ItIsMSSQL
                 Reference.ItIsMySQL = ItIsMySQL
+                Reference.ItIsES = ItIsES
 
             Catch ex As Exception
                 Log.ErrorException("Ошибка создания объекта справочника для ИБ (" + Name + ")", ex)
@@ -1447,6 +1470,8 @@ Public Class EventLogLoaderService
     Dim DBType As String
     Dim ItIsMSSQL As Boolean = False
     Dim ItIsMySQL As Boolean = False
+    Dim ItIsES As Boolean = False
+
     Public SleepTime As Integer = 60 * 1000 '1 минута
 
     Function LoadConfigSetting()
@@ -1467,6 +1492,8 @@ Public Class EventLogLoaderService
                     ItIsMySQL = True
                 ElseIf DBType = "MS SQL Server" Then
                     ItIsMSSQL = True
+                ElseIf DBType = "ElasticSearch" Then
+                    ItIsES = True
                 End If
 
                 Dim s = ConfigSettingObj.RepeatTime
@@ -1488,6 +1515,7 @@ Public Class EventLogLoaderService
                     IB.SleepTime = SleepTime
                     IB.ItIsMSSQL = ItIsMSSQL
                     IB.ItIsMySQL = ItIsMySQL
+                    IB.ItIsES = ItIsES
 
                     ReDim Preserve ArrayIB(i)
                     ArrayIB(i) = IB
@@ -1555,7 +1583,7 @@ Public Class EventLogLoaderService
         'Log.Info("Запуск основного функционала")
 
         If Not LoadConfigSetting() Then
-            Log.Error("Ошибка работы с файлом параметров setting.ini в каталоге приложения")
+            Log.Error("Ошибка работы с файлом параметров config.json в каталоге приложения")
             Environment.Exit(-1)
         End If
 
@@ -1599,28 +1627,31 @@ Public Class EventLogLoaderService
                 Dim objConn As New SqlConnection(ConnectionString)
                 objConn.Open()
 
-                Dim command As New SqlCommand("IF NOT EXISTS (select * from sysobjects where id = object_id(N'Events'))" + vbNewLine + _
-                                              "	CREATE TABLE [dbo].[Events]([InfobaseCode] int NOT NULL, [DateTime] [datetime] NOT NULL,	" + _
-                                              "		[TransactionStatus] [char](1) NULL,	" + _
-                                              "		[TransactionStartTime] [datetime] NULL,	" + _
-                                              "		[TransactionMark] bigint NULL,	" + _
-                                              "		[Transaction] [char](100) NULL,	" + _
-                                              "		[UserName] int NULL,	" + _
-                                              "		[ComputerName] int NULL,	" + _
-                                              "		[AppName] int NULL,	" + _
-                                              "     [Field2] [char](100) NULL,	" + _
-                                              "		[EventID] int NULL,	" + _
-                                              "		[EventType] [char](1) NULL,	" + _
-                                              "		[Comment] [varchar](max) NULL,	" + _
-                                              "		[MetadataID] int NULL,	" + _
-                                              "		[DataStructure] [char](100) NULL,	" + _
-                                              "		[DataString] [varchar](max) NULL,	" + _
-                                              "		[ServerID] int NULL,	" + _
-                                              "		[MainPortID] int NULL,	" + _
-                                              "		[SecondPortID] int NULL,	" + _
-                                              "		[Seance] int NULL,	" + _
-                                              "		[Field7] [char](100) NULL,	" + _
-                                              "		[Field8] [char](100) NULL)", objConn)
+                Dim command As New SqlCommand("IF NOT EXISTS (select * from sysobjects where id = object_id(N'Events'))
+                                                BEGIN
+                                                  CREATE TABLE [dbo].[Events]([InfobaseCode] int Not NULL, [DateTime] [datetime] Not NULL, 
+                                                        [TransactionStatus] [char](1) NULL,	
+                                                        [TransactionStartTime] [datetime] NULL, 
+                                              		    [TransactionMark] bigint NULL,	
+                                                        [Transaction] [char](100) NULL,	
+                                              		    [UserName] int NULL,	
+                                              	        [ComputerName] int NULL,	
+                                              		    [AppName] Int NULL, 
+                                                        [Field2] [char](100) NULL,	
+                                                        [EventID] int NULL, 
+                                              		    [EventType] [char](1) NULL,	
+                                                        [Comment] [varchar](max) NULL,	
+                                              		    [MetadataID] int NULL,	
+                                              		    [DataStructure] [Char](100) NULL, 
+                                              		    [DataString] [varchar](max) NULL,	
+                                                        [ServerID] int NULL, 
+                                              		    [MainPortID] int NULL,	
+                                                        [SecondPortID] int NULL, 
+                                              		    [Seance] int NULL,	
+                                                        [Field7] [char](100) NULL,	
+                                              		    [Field8] [char](100) NULL);
+                                                    CREATE CLUSTERED INDEX [CIX_Events] ON [dbo].[Events]([InfobaseCode], [DateTime])
+                                                END", objConn)
                 command.ExecuteNonQuery()
 
                 '**********************************************************************************
