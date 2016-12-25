@@ -69,6 +69,10 @@
     <ApplicationIcon>Untitled - 5.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MySql.Data, Version=6.9.7.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\MySql.Data.6.9.5\lib\net20\MySql.Data.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -113,6 +117,8 @@
     <Compile Include="AddPath.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="ServiceDescriptionClass.vb" />
+    <Compile Include="Installer.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -169,18 +175,6 @@
     <ProjectReference Include="..\EventLogLoaderService\EventLogLoaderService.vbproj">
       <Project>{F7EF5930-B310-4697-B522-2325EAF247F2}</Project>
       <Name>EventLogLoaderService</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\IniFile\IniFile.vbproj">
-      <Project>{8119A1A1-E5D6-4269-9A5C-0F49E039E72D}</Project>
-      <Name>IniFile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Installer\Installer.vbproj">
-      <Project>{593952E2-6C95-4496-BFD5-C8C64DF78DE5}</Project>
-      <Name>Installer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Service1C\Service1C.vbproj">
-      <Project>{7261F9CC-9B2F-4FA5-ADD3-9FCF4948623F}</Project>
-      <Name>Service1C</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

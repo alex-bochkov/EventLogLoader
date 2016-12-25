@@ -97,9 +97,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Parser\Parser.vbproj">
-      <Project>{3164BFA8-8AC5-4BC2-965A-15D40B6316AA}</Project>
-      <Name>Parser</Name>
+    <ProjectReference Include="..\EventLogLoaderService\EventLogLoaderService.vbproj">
+      <Project>{F7EF5930-B310-4697-B522-2325EAF247F2}</Project>
+      <Name>EventLogLoaderService</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

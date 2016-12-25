@@ -600,7 +600,7 @@ Public Class EventLogLoaderService
             '    ReDim Preserve Events(Events.Length)
             'End If
 
-            Dim Array = Parser.ParserServices.ParsesClass.ParseEventlogString(Str)
+            Dim Array = ParserServices.ParseEventlogString(Str)
             OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
             OneEvent.TransactionStatus = Array(1)
 
@@ -1008,7 +1008,7 @@ Public Class EventLogLoaderService
                         FS.Close()
 
 
-                        Dim ArrayLines = Parser.ParserServices.ParsesClass.ParseString(Text)
+                        Dim ArrayLines = ParserServices.ParseString(Text)
 
                         Dim i = 0
                         For Each a In ArrayLines
@@ -1442,59 +1442,42 @@ Public Class EventLogLoaderService
 
     Dim ArrayIB() As InfoBaseEventlog
     Dim ArrayThread() As Threading.Thread
-    Dim Param As IniFile.IniFileClass
+    Dim ConfigSettingObj As ConfigSetting = New ConfigSetting
     Dim ConnectionString As String
     Dim DBType As String
     Dim ItIsMSSQL As Boolean = False
     Dim ItIsMySQL As Boolean = False
     Public SleepTime As Integer = 60 * 1000 '1 минута
 
-    Function LoadIniFileParams()
+    Function LoadConfigSetting()
 
-        LoadIniFileParams = False
+        LoadConfigSetting = False
 
         Try
-            Param = New IniFile.IniFileClass
 
-            Dim PathIniFile = Path.Combine(My.Application.Info.DirectoryPath, "setting.ini")
-            If My.Computer.FileSystem.FileExists(PathIniFile) Then
+            Dim PathConfigFile = Path.Combine(My.Application.Info.DirectoryPath, "config.json")
+            If My.Computer.FileSystem.FileExists(PathConfigFile) Then
 
-                Param.Load(PathIniFile)
+                ConfigSettingObj = ConfigSettingsModule.LoadConfigSettingFromFile(PathConfigFile)
 
-                Dim s As String
+                ConnectionString = ConfigSettingObj.ConnectionString
 
-                s = Param.RestoreIniValue(Param, "GlobalValues", "ConnectionString")
-                If Not s = "" Then
-                    ConnectionString = s
+                DBType = ConfigSettingObj.DBType
+                If DBType = "MySQL" Then
+                    ItIsMySQL = True
+                ElseIf DBType = "MS SQL Server" Then
+                    ItIsMSSQL = True
                 End If
 
-                s = Param.RestoreIniValue(Param, "GlobalValues", "DBType")
-                If Not s = "" Then
-                    DBType = s
+                Dim s = ConfigSettingObj.RepeatTime
+                SleepTime = s * 1000
 
-                    If DBType = "MySQL" Then
-                        ItIsMySQL = True
-                    ElseIf DBType = "MS SQL Server" Then
-                        ItIsMSSQL = True
-                    End If
-                End If
+                Dim i = 0
+                For Each IBConfig In ConfigSettingObj.Infobases
 
-                Try
-                    s = Param.RestoreIniValue(Param, "GlobalValues", "RepeatTime")
-                    If Not s = "" Then
-                        SleepTime = Convert.ToInt32(s) * 1000
-                    End If
-                Catch ex As Exception
-                End Try
-
-                Dim CountStr = Param.RestoreIniValue(Param, "GlobalValues", "DatabaseCount")
-                Dim Count As Integer = Convert.ToInt32(IIf(CountStr = "", "0", CountStr))
-
-                For i = 1 To Count
-
-                    Dim IB_ID = Param.RestoreIniValue(Param, "Databases", "DatabaseID" + i.ToString)
-                    Dim IB_Name = Param.RestoreIniValue(Param, "Databases", "DatabaseName" + i.ToString)
-                    Dim IB_Catalog = Param.RestoreIniValue(Param, "Databases", "DatabaseCatalog" + i.ToString)
+                    Dim IB_ID = IBConfig.DatabaseID
+                    Dim IB_Name = IBConfig.DatabaseName
+                    Dim IB_Catalog = IBConfig.DatabaseCatalog
 
                     Dim IB = New InfoBaseEventlog
                     IB.Log = NLog.LogManager.GetLogger("CurrentThread")
@@ -1506,20 +1489,20 @@ Public Class EventLogLoaderService
                     IB.ItIsMSSQL = ItIsMSSQL
                     IB.ItIsMySQL = ItIsMySQL
 
-                    ReDim Preserve ArrayIB(i - 1)
-                    ArrayIB(i - 1) = IB
+                    ReDim Preserve ArrayIB(i)
+                    ArrayIB(i) = IB
 
+                    i = i + 1
                 Next
 
 
-                LoadIniFileParams = True
+                LoadConfigSetting = True
             Else
-                Log.Error("Файл setting.ini не найден")
+                Log.Error("Файл config.json не найден")
             End If
         Catch ex As Exception
-            Log.ErrorException("Ошибка загрузки параметров из ini-файла", ex)
+            Log.ErrorException("Ошибка загрузки параметров из config.json", ex)
         End Try
-
 
 
     End Function
@@ -1571,7 +1554,7 @@ Public Class EventLogLoaderService
 
         'Log.Info("Запуск основного функционала")
 
-        If Not LoadIniFileParams() Then
+        If Not LoadConfigSetting() Then
             Log.Error("Ошибка работы с файлом параметров setting.ini в каталоге приложения")
             Environment.Exit(-1)
         End If

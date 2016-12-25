@@ -4,73 +4,30 @@ Imports System.Management
 Imports System.Data.SqlClient
 Imports MySql.Data.MySqlClient
 Imports System.Net
+Imports EventLogLoaderService
 
 Public Class Form1
 
-    Dim ArrayServices() As Service1C.ServiceDescriptionClass
-    Dim PathIniFile = Path.Combine(My.Application.Info.DirectoryPath, "setting.ini")
-    Dim IniFile As IniFile.IniFileClass = New IniFile.IniFileClass
+    Dim ArrayServices() As ServiceDescriptionClass
+    Dim PathConfigFile = Path.Combine(My.Application.Info.DirectoryPath, "config.json")
     Dim GroupExtraPath As ListViewGroup
 
-    Structure InfobaseParams
-        Dim Guid As String
-        Dim Name As String
-        Dim CatalogEventlog As String
-        Dim Found As Boolean
-    End Structure
-
-    Dim ArrayInfoBaseParamSaved As List(Of InfobaseParams) = New List(Of InfobaseParams)
+    Dim ConfigSetting As ConfigSetting = New ConfigSetting
 
     Sub LoadFromIniFile()
 
-        If My.Computer.FileSystem.FileExists(PathIniFile) Then
-            IniFile.Load(PathIniFile)
+        ConfigSetting = ConfigSettingsModule.LoadConfigSettingFromFile(PathConfigFile)
 
-
-            Dim s = IniFile.RestoreIniValue(IniFile, "GlobalValues", "ConnectionString")
-            If Not s = "" Then
-                ConnectionStringBox.Text = s
-            End If
-
-            s = IniFile.RestoreIniValue(IniFile, "GlobalValues", "DBType")
-            If Not s = "" Then
-                DBType.Text = s
-            End If
-
-            Try
-                s = IniFile.RestoreIniValue(IniFile, "GlobalValues", "RepeatTime")
-                If Not s = "" Then
-                    RepeatTime.Text = Convert.ToInt32(s).ToString
-                End If
-            Catch ex As Exception
-                RepeatTime.Text = 60
-            End Try
-
-            Dim i = 0
-            s = IniFile.RestoreIniValue(IniFile, "GlobalValues", "DatabaseCount")
-            If Not s = "" Then
-                i = Convert.ToInt32(s)
-            End If
-
-            For j = 1 To i
-
-                Dim IB = New InfobaseParams
-                IB.Guid = IniFile.RestoreIniValue(IniFile, "Databases", "DatabaseID" + j.ToString)
-                IB.Name = IniFile.RestoreIniValue(IniFile, "Databases", "DatabaseName" + j.ToString)
-                IB.CatalogEventlog = IniFile.RestoreIniValue(IniFile, "Databases", "DatabaseCatalog" + j.ToString)
-
-                ArrayInfoBaseParamSaved.Add(IB)
-
-            Next
-
-        End If
+        ConnectionStringBox.Text = ConfigSetting.ConnectionString
+        DBType.Text = ConfigSetting.DBType
+        RepeatTime.Text = ConfigSetting.RepeatTime.ToString
 
     End Sub
 
 
-    Function FindInfobase(Guid As String) As Service1C.ServiceDescriptionClass.Infobases
+    Function FindInfobase(Guid As String) As ServiceDescriptionClass.Infobases
 
-        FindInfobase = New Service1C.ServiceDescriptionClass.Infobases
+        FindInfobase = New ServiceDescriptionClass.Infobases
 
         For Each Srv In ArrayServices
             If Not Srv.ArrayInfobases Is Nothing Then
@@ -90,53 +47,40 @@ Public Class Form1
 
         FindInfobaseInSavedParams = False
 
-        For i = 0 To ArrayInfoBaseParamSaved.Count - 1
-            Dim IB = ArrayInfoBaseParamSaved(i)
-            If IB.Guid = Guid Then
+        For Each IB In ConfigSetting.Infobases
+            If IB.DatabaseID = Guid Then
                 IB.Found = True
-                ArrayInfoBaseParamSaved(i) = IB
                 Return True
             End If
         Next
-        'For Each Ib In ArrayInfoBaseParamSaved
-        '    If Ib.Guid = Guid Then
-        '        Ib.Found = True
-        '        Return True
-        '    End If
-        'Next
 
     End Function
 
     Private Sub Button1_Click(sender As System.Object, e As System.EventArgs) Handles Button1.Click
 
-        If My.Computer.FileSystem.FileExists(PathIniFile) Then
-            IniFile.Load(PathIniFile)
-            IniFile.RemoveAllSections()
-        End If
+        Dim ConfigSetting = New ConfigSetting
+        ConfigSetting.ConnectionString = ConnectionStringBox.Text.Trim
+        ConfigSetting.DBType = DBType.Text.Trim
 
-        IniFile.AddSection("GlobalValues").AddKey("ConnectionString").Value = ConnectionStringBox.Text.Trim
-        IniFile.AddSection("GlobalValues").AddKey("DBType").Value = DBType.Text.Trim
-
-        Dim i = 0
         For Each Item As ListViewItem In ListView.Items
             If Item.Checked Then
 
-                i = i + 1
+                Dim IBSetting = New ConfigSettingsModule.InfobaseSetting
+                IBSetting.DatabaseID = Item.SubItems(1).Text
+                IBSetting.DatabaseName = Item.SubItems(0).Text
+                IBSetting.DatabaseCatalog = Item.SubItems(4).Text
 
-                IniFile.AddSection("Databases").AddKey("DatabaseID" + i.ToString).Value = Item.SubItems(1).Text
-                IniFile.AddSection("Databases").AddKey("DatabaseName" + i.ToString).Value = Item.SubItems(0).Text
-                IniFile.AddSection("Databases").AddKey("DatabaseCatalog" + i.ToString).Value = Item.SubItems(4).Text
+                ConfigSetting.Infobases.Add(IBSetting)
 
             End If
         Next
 
-        IniFile.AddSection("GlobalValues").AddKey("DatabaseCount").Value = i
 
         Dim Rep = Convert.ToInt32(RepeatTime.Text)
 
-        IniFile.AddSection("GlobalValues").AddKey("RepeatTime").Value = IIf(Rep = 0, 60, Rep)
+        ConfigSetting.RepeatTime = IIf(Rep = 0, 60, Rep)
+        ConfigSettingsModule.SaveConfigSettingToFile(ConfigSetting, PathConfigFile)
 
-        IniFile.Save(PathIniFile)
 
         Dim sc = New System.ServiceProcess.ServiceController("EventLog loader service")
         Try
@@ -166,10 +110,10 @@ Public Class Form1
         Dim User = "LocalSystem"
         Dim Pwd = ""
 
-        If Not Installer.ObjTec.Services.ServiceInstaller.InstallService(PathName, ServName, DisplayName, lpDependencies, User, Pwd) Then
+        If Not ObjTec.Services.ServiceInstaller.InstallService(PathName, ServName, DisplayName, lpDependencies, User, Pwd) Then
 
             Dim ErrorCode = Marshal.GetLastWin32Error()
-            MsgBox("Ошибка установки службы Windows: " + Installer.ObjTec.Services.ServiceInstaller.GetErrorDescription(ErrorCode), , Text)
+            MsgBox("Ошибка установки службы Windows: " + ObjTec.Services.ServiceInstaller.GetErrorDescription(ErrorCode), , Text)
 
         Else
 
@@ -184,10 +128,10 @@ Public Class Form1
 
         Dim ServName = "EventLog loader service"
 
-        If Not Installer.ObjTec.Services.ServiceInstaller.UninstallService(ServName) Then
+        If Not ObjTec.Services.ServiceInstaller.UninstallService(ServName) Then
 
             Dim ErrorCode = Marshal.GetLastWin32Error()
-            MsgBox("Ошибка удаления службы Windows: " + Installer.ObjTec.Services.ServiceInstaller.GetErrorDescription(ErrorCode), , Text)
+            MsgBox("Ошибка удаления службы Windows: " + ObjTec.Services.ServiceInstaller.GetErrorDescription(ErrorCode), , Text)
 
         Else
 
@@ -226,7 +170,7 @@ Public Class Form1
             Dim PathName As String = info("PathName")
             Dim DisplayName As String = info("DisplayName")
 
-            Dim Serv = New Service1C.ServiceDescriptionClass
+            Dim Serv = New ServiceDescriptionClass
             Serv.Name = info("Name")
             Serv.DisplayName = info("DisplayName")
             Serv.Description = info("Description")
@@ -281,29 +225,24 @@ Public Class Form1
         GroupExtraPath = New ListViewGroup("Дополнительные пути для загрузки событий из ЖР")
         ListView.Groups.Add(GroupExtraPath)
 
-
-        For Each Ib In ArrayInfoBaseParamSaved
-            If Not Ib.Found Then
-
-                Dim item1 = New ListViewItem(Ib.Name, GroupExtraPath)
+        For Each IB In ConfigSetting.Infobases
+            If Not IB.Found Then
+                Dim item1 = New ListViewItem(IB.DatabaseName, GroupExtraPath)
                 item1.Checked = True
-                item1.SubItems.Add(Ib.Guid)
+                item1.SubItems.Add(IB.DatabaseID)
                 item1.SubItems.Add("")
-                item1.SubItems.Add(CalcullateFolderSize(Ib.CatalogEventlog))
-                item1.SubItems.Add(Ib.CatalogEventlog)
+                item1.SubItems.Add(CalcullateFolderSize(IB.DatabaseCatalog))
+                item1.SubItems.Add(IB.DatabaseCatalog)
 
                 ListView.Items.Add(item1)
-
             End If
         Next
 
-
-
     End Sub
 
-    Private Function LoadFileInfobasesList() As List(Of Service1C.ServiceDescriptionClass.Infobases)
+    Private Function LoadFileInfobasesList() As List(Of ServiceDescriptionClass.Infobases)
 
-        Dim Result As List(Of Service1C.ServiceDescriptionClass.Infobases) = New List(Of Service1C.ServiceDescriptionClass.Infobases)
+        Dim Result As List(Of ServiceDescriptionClass.Infobases) = New List(Of ServiceDescriptionClass.Infobases)
 
         'Try
 
@@ -313,7 +252,7 @@ Public Class Form1
 
             Dim reader As StreamReader = My.Computer.FileSystem.OpenTextFileReader(IbasesListPath)
             Dim aa As String = ""
-            Dim Infobase As Service1C.ServiceDescriptionClass.Infobases = Nothing
+            Dim Infobase As ServiceDescriptionClass.Infobases = Nothing
 
             Try
                 Do
@@ -328,7 +267,7 @@ Public Class Form1
                                 Result.Add(Infobase)
                             End If
 
-                            Infobase = New Service1C.ServiceDescriptionClass.Infobases
+                            Infobase = New ServiceDescriptionClass.Infobases
                             Infobase.Name = a.Substring(1, a.Length - 2)
                         ElseIf a.StartsWith("Connect=File=") Then
                             'Connect=File="C:\Users\Alex\Documents\AS";
@@ -355,7 +294,7 @@ Public Class Form1
                             Infobase.GUID = a.Substring(3)
                         End If
                     Catch ex As Exception
-                        Infobase = New Service1C.ServiceDescriptionClass.Infobases
+                        Infobase = New ServiceDescriptionClass.Infobases
                     End Try
 
                     aa = reader.ReadLine

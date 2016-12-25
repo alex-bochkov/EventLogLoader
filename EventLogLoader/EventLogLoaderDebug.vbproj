@@ -158,10 +158,6 @@
       <Project>{F7EF5930-B310-4697-B522-2325EAF247F2}</Project>
       <Name>EventLogLoaderService</Name>
     </ProjectReference>
-    <ProjectReference Include="..\IniFile\IniFile.vbproj">
-      <Project>{8119A1A1-E5D6-4269-9A5C-0F49E039E72D}</Project>
-      <Name>IniFile</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

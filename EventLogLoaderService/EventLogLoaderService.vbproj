@@ -102,10 +102,12 @@
     <Import Include="System.Diagnostics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigSettings.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
     </Compile>
+    <Compile Include="Parser.vb" />
     <Compile Include="ProjectInstaller.Designer.vb">
       <DependentUpon>ProjectInstaller.vb</DependentUpon>
     </Compile>
@@ -158,16 +160,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\IniFile\IniFile.vbproj">
-      <Project>{8119A1A1-E5D6-4269-9A5C-0F49E039E72D}</Project>
-      <Name>IniFile</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Parser\Parser.vbproj">
-      <Project>{3164BFA8-8AC5-4BC2-965A-15D40B6316AA}</Project>
-      <Name>Parser</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
