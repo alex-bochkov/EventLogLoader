@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports EventLogLoaderService
 
 Public Class ServiceDescriptionClass
     Public Name As String
@@ -181,7 +182,7 @@ Public Class ServiceDescriptionClass
             Dim Text = My.Computer.FileSystem.ReadAllText(TMP)
             My.Computer.FileSystem.DeleteFile(TMP)
 
-            Dim Array = Parser.ParserServices.ParsesClass.ParseString(Text)
+            Dim Array = ParserServices.ParseString(Text)
 
             Dim i = 0
 

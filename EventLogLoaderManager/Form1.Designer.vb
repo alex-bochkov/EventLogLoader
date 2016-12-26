@@ -107,9 +107,9 @@ Partial Class Form1
         Me.Label1.ForeColor = System.Drawing.Color.Maroon
         Me.Label1.Location = New System.Drawing.Point(8, 9)
         Me.Label1.Name = "Label1"
-        Me.Label1.Size = New System.Drawing.Size(507, 17)
+        Me.Label1.Size = New System.Drawing.Size(450, 17)
         Me.Label1.TabIndex = 3
-        Me.Label1.Text = "Строка соединения с базой данных MS SQL для записи событий ЖР"
+        Me.Label1.Text = "Строка соединения с базой данных для записи событий ЖР"
         '
         'Button4
         '
@@ -157,7 +157,7 @@ Partial Class Form1
         'DBType
         '
         Me.DBType.FormattingEnabled = True
-        Me.DBType.Items.AddRange(New Object() {"MS SQL Server", "MySQL"})
+        Me.DBType.Items.AddRange(New Object() {"MS SQL Server", "MySQL", "ElasticSearch"})
         Me.DBType.Location = New System.Drawing.Point(9, 29)
         Me.DBType.Name = "DBType"
         Me.DBType.Size = New System.Drawing.Size(112, 21)

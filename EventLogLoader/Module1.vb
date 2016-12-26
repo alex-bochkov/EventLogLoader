@@ -5,11 +5,11 @@ Module Module1
 
         Dim Service = New EventLogLoaderService.EventLogLoaderService
         Service.SubStart()
-        Console.WriteLine("Служба запущена")
+        Console.WriteLine("Service has been started")
         Console.ReadKey()
 
         Service.SubStop()
-        Console.WriteLine("Служба остановлена")
+        Console.WriteLine("Service has been stopped")
 
     End Sub
 
