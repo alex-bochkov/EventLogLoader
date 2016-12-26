@@ -64,7 +64,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Computer
         Item.Code = Code
-        Item.Name = Name
+        Item.Name = Name.Replace("""", "")
 
         DictComputers.Add(Code, Item)
 
@@ -74,7 +74,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Application
         Item.Code = Code
-        Item.Name = Name
+        Item.Name = Name.Replace("""", "")
 
         DictApplications.Add(Code, Item)
 
@@ -105,7 +105,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Server
         Item.Code = Code
-        Item.Name = Name
+        Item.Name = Name.Replace("""", "")
 
         DictServers.Add(Code, Item)
 
@@ -176,10 +176,20 @@ Public Class EventLogProcessor
 
     Class ESRecord
         Public DateTime As Date
+        Public EventType As EventType
+        Public EventTypeString As String
         Public Computer As Computer
         Public Application As Application
         Public Metadata As Metadata
         Public UserName As User
+        Public Seance As Integer
+        Public DataStructure As String
+        Public DataString As String
+        Public Comment As String
+        Public MainPort As Integer
+        Public SecondPort As Integer
+        Public Server As String
+
     End Class
 
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
@@ -708,7 +718,7 @@ Public Class EventLogProcessor
 
             SaveReadParametersToFile()
 
-            Console.WriteLine(Now.ToShortTimeString + " Записано новых событий в базу " + i.ToString)
+            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + i.ToString)
 
             command.CommandText = "COMMIT TRANSACTION"
             command.Parameters.Clear()
@@ -771,7 +781,7 @@ Public Class EventLogProcessor
 
             Next
 
-            Console.WriteLine(Now.ToShortTimeString + " Записано новых событий в базу " + i.ToString)
+            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + i.ToString)
 
             SaveReadParametersToFile()
 
@@ -796,10 +806,40 @@ Public Class EventLogProcessor
             For Each EventRecord In EventsList
                 Dim ESRecord = New ESRecord
                 ESRecord.DateTime = EventRecord.DateTime
+                ESRecord.Seance = EventRecord.Seance
+                ESRecord.DataStructure = EventRecord.DataStructure
+                ESRecord.DataString = EventRecord.DataString
+                ESRecord.Comment = EventRecord.Comment
+                ESRecord.EventTypeString = EventRecord.EventType
+
+                Dim EventObj = New EventType
+                If DictEvents.TryGetValue(EventRecord.EventID, EventObj) Then
+                    ESRecord.EventType = EventObj
+                End If
 
                 Dim MetadataObj = New Metadata
                 If DictMetadata.TryGetValue(EventRecord.MetadataID, MetadataObj) Then
                     ESRecord.Metadata = MetadataObj
+                End If
+
+                Dim ComputerObj = New Computer
+                If DictComputers.TryGetValue(EventRecord.ComputerName, ComputerObj) Then
+                    ESRecord.Computer = ComputerObj
+                End If
+
+                Dim MainPortObj = New MainPort
+                If DictMainPorts.TryGetValue(EventRecord.MainPortID, MainPortObj) Then
+                    ESRecord.MainPort = MainPortObj.Name
+                End If
+
+                Dim ServerObj = New Server
+                If DictServers.TryGetValue(EventRecord.ServerID, ServerObj) Then
+                    ESRecord.Server = ServerObj.Name
+                End If
+
+                Dim SecondPortObj = New SecondPort
+                If DictSecondPorts.TryGetValue(EventRecord.SecondPortID, SecondPortObj) Then
+                    ESRecord.SecondPort = SecondPortObj.Name
                 End If
 
                 Dim ApplicationObj = New Application
@@ -815,18 +855,9 @@ Public Class EventLogProcessor
                 NewRecords.Add(ESRecord)
             Next
 
-            'Dim elasticsearchMappingResolver As IElasticsearchMappingResolver = New ElasticsearchMappingResolver()
-            'elasticsearchMappingResolver.AddElasticSearchMappingForEntityType(TypeOf (), New ElasticsearchMappingTestDto());
-            'Dim context = New ElasticsearchContext(ConnectionString, New ElasticsearchSerializerConfiguration(elasticsearchMappingResolver, True, True))
-
-
-            'Dim descriptor = New BulkDescriptor()
-            'For Each item In Events
-            '    '    descriptor.Index(Of OneEvent)(Function(op) op.Document(item))
-            'Next
-            'Dim result = _current.Bulk(descriptor)
-
             Dim Result = _current.IndexMany(NewRecords, Index, "event-record")
+
+            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + NewRecords.Count.ToString)
 
             SaveReadParametersToFile()
 
@@ -899,7 +930,7 @@ Public Class EventLogProcessor
 
             End If
         Catch ex As Exception
-            Log.ErrorException("Ошибка при работе со справочником", ex)
+            Log.ErrorException("Error occurred while working with reference file", ex)
         End Try
 
 
@@ -909,9 +940,9 @@ Public Class EventLogProcessor
 
             If My.Computer.FileSystem.FileExists(FileName) Then
 
-                Dim Conn = New System.Data.SQLite.SQLiteConnection("Data Source=" + FileName)
+                Dim Conn = New SQLite.SQLiteConnection("Data Source=" + FileName)
                 Conn.Open()
-                Dim Command = New System.Data.SQLite.SQLiteCommand
+                Dim Command = New SQLite.SQLiteCommand
                 Command.Connection = Conn
 
                 Command.CommandText = "SELECT [code], [name] FROM [AppCodes]"
@@ -979,7 +1010,7 @@ Public Class EventLogProcessor
             End If
 
         Catch ex As Exception
-            Log.ErrorException("Ошибка при работе со справочником", ex)
+            Log.ErrorException("Error occurred while working with reference tables", ex)
         End Try
 
     End Sub
@@ -1057,6 +1088,7 @@ Public Class EventLogProcessor
                                         " FROM [EventLog] WHERE [rowID] > " + LastEventNumber83.ToString + " LIMIT 1000"
                 Dim rs = Command.ExecuteReader
 
+                Dim HasData = rs.HasRows
                 While rs.Read
 
                     Dim OneEvent = New OneEventRecord
@@ -1112,16 +1144,23 @@ Public Class EventLogProcessor
 
                     EventsList.Add(OneEvent)
 
+                    If EventsList.Count >= 1000 Then
+                        'Console.WriteLine("Выгрузка 1000 событий: " + Now.ToString)
+                        SaveEventsToSQL()
+                    End If
+
                     LastEventNumber83 = OneEvent.RowID
 
                 End While
+
+
                 rs.Close()
 
-                If EventsList.Count = 0 Then
+                SaveEventsToSQL()
+
+                If Not HasData Then
                     Exit While
                 End If
-
-                SaveReferenceValuesToDatabase()
 
             End While
 

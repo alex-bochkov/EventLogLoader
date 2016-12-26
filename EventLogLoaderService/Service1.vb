@@ -116,7 +116,6 @@ Public Class EventLogLoaderService
         WorkerThread.SetApartmentState(Threading.ApartmentState.STA)
 
 
-
     End Sub
 
     Private Sub DoWork()
@@ -257,6 +256,7 @@ Public Class EventLogLoaderService
 
                 command.Dispose()
                 objConn.Close()
+                objConn.Dispose()
 
             ElseIf ItIsMySQL Then
 
@@ -310,7 +310,7 @@ Public Class EventLogLoaderService
 
                 command.Dispose()
                 objConn.Close()
-
+                objConn.Dispose()
 
             End If
 
