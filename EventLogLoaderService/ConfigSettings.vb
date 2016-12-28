@@ -3,6 +3,7 @@
 Public Module ConfigSettingsModule
 
     Class InfobaseSetting
+        Public ESServerName As String
         Public DatabaseID As String
         Public DatabaseName As String
         Public DatabaseCatalog As String
@@ -13,6 +14,7 @@ Public Module ConfigSettingsModule
         Public ConnectionString As String
         Public DBType As String
         Public RepeatTime As Integer
+        Public ESIndexName As String
         Public Infobases As List(Of InfobaseSetting)
         Sub New()
             Infobases = New List(Of InfobaseSetting)

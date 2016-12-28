@@ -61,6 +61,8 @@ Public Class EventLogLoaderService
                     EventLogProcessorObj.ItIsMSSQL = ItIsMSSQL
                     EventLogProcessorObj.ItIsMySQL = ItIsMySQL
                     EventLogProcessorObj.ItIsES = ItIsES
+                    EventLogProcessorObj.ESIndexName = ConfigSettingObj.ESIndexName
+                    EventLogProcessorObj.ESServerName = IBConfig.ESServerName
 
                     ListOfProcessors.Add(EventLogProcessorObj)
 

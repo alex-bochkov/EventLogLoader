@@ -64,7 +64,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Computer
         Item.Code = Code
-        Item.Name = Name.Replace("""", "")
+        Item.Name = Name
 
         DictComputers.Add(Code, Item)
 
@@ -74,7 +74,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Application
         Item.Code = Code
-        Item.Name = Name.Replace("""", "")
+        Item.Name = Name
 
         DictApplications.Add(Code, Item)
 
@@ -105,7 +105,7 @@ Public Class EventLogProcessor
 
         Dim Item = New Server
         Item.Code = Code
-        Item.Name = Name.Replace("""", "")
+        Item.Name = Name
 
         DictServers.Add(Code, Item)
 
@@ -175,25 +175,28 @@ Public Class EventLogProcessor
     End Class
 
     Class ESRecord
+        Public ServerName As String
+        Public DatabaseName As String
         Public DateTime As Date
         Public EventType As EventType
         Public EventTypeString As String
-        Public Computer As Computer
-        Public Application As Application
+        Public Computer As String
+        Public Application As String
         Public Metadata As Metadata
         Public UserName As User
         Public Seance As Integer
         Public DataStructure As String
         Public DataString As String
         Public Comment As String
-        Public MainPort As Integer
-        Public SecondPort As Integer
+        Public PrimaryPort As Integer
+        Public SecondaryPort As Integer
         Public Server As String
-
     End Class
 
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
 
+    Public ESIndexName As String
+    Public ESServerName As String
 
     Public InfobaseName As String
     Public InfobaseGuid As String
@@ -795,16 +798,15 @@ Public Class EventLogProcessor
 
         ElseIf ItIsES Then
 
-            Dim Index = "event-log-" + InfobaseGuid
             Dim node = New Uri(ConnectionString)
 
-            Dim _settings = New ConnectionSettings(node).DefaultIndex(Index).MaximumRetries(2).MaxRetryTimeout(TimeSpan.FromSeconds(150))
+            Dim _settings = New ConnectionSettings(node).DefaultIndex(ESIndexName).MaximumRetries(2).MaxRetryTimeout(TimeSpan.FromSeconds(150))
             Dim _current = New ElasticClient(_settings)
 
             'Let's create proper array for ES
             Dim NewRecords As List(Of ESRecord) = New List(Of ESRecord)
             For Each EventRecord In EventsList
-                Dim ESRecord = New ESRecord
+                Dim ESRecord = New ESRecord With {.ServerName = ESServerName, .DatabaseName = InfobaseName}
                 ESRecord.DateTime = EventRecord.DateTime
                 ESRecord.Seance = EventRecord.Seance
                 ESRecord.DataStructure = EventRecord.DataStructure
@@ -824,12 +826,12 @@ Public Class EventLogProcessor
 
                 Dim ComputerObj = New Computer
                 If DictComputers.TryGetValue(EventRecord.ComputerName, ComputerObj) Then
-                    ESRecord.Computer = ComputerObj
+                    ESRecord.Computer = ComputerObj.Name
                 End If
 
                 Dim MainPortObj = New MainPort
                 If DictMainPorts.TryGetValue(EventRecord.MainPortID, MainPortObj) Then
-                    ESRecord.MainPort = MainPortObj.Name
+                    ESRecord.PrimaryPort = MainPortObj.Name
                 End If
 
                 Dim ServerObj = New Server
@@ -839,12 +841,12 @@ Public Class EventLogProcessor
 
                 Dim SecondPortObj = New SecondPort
                 If DictSecondPorts.TryGetValue(EventRecord.SecondPortID, SecondPortObj) Then
-                    ESRecord.SecondPort = SecondPortObj.Name
+                    ESRecord.SecondaryPort = SecondPortObj.Name
                 End If
 
                 Dim ApplicationObj = New Application
                 If DictApplications.TryGetValue(EventRecord.AppName, ApplicationObj) Then
-                    ESRecord.Application = ApplicationObj
+                    ESRecord.Application = ApplicationObj.Name
                 End If
 
                 Dim UserNameObj = New User
@@ -855,7 +857,7 @@ Public Class EventLogProcessor
                 NewRecords.Add(ESRecord)
             Next
 
-            Dim Result = _current.IndexMany(NewRecords, Index, "event-record")
+            Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
 
             Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + NewRecords.Count.ToString)
 
@@ -868,6 +870,16 @@ Public Class EventLogProcessor
     End Sub
 
     Sub LoadReference()
+
+        'Clear all reference dictionaries
+        DictUsers.Clear()
+        DictComputers.Clear()
+        DictApplications.Clear()
+        DictEvents.Clear()
+        DictMetadata.Clear()
+        DictServers.Clear()
+        DictMainPorts.Clear()
+        DictSecondPorts.Clear()
 
         Try
             Dim FileName = Path.Combine(Catalog, "1Cv8.lgf")
@@ -916,7 +928,7 @@ Public Class EventLogProcessor
                                 Case "11"
                                 Case "12"
                                 Case "13"
-                                    'в числе последних трех должны быть статус транзакци и важность
+                                    'в числе последних трех должны быть статус транзакции и важность
                                 Case Else
 
                             End Select
@@ -948,21 +960,21 @@ Public Class EventLogProcessor
                 Command.CommandText = "SELECT [code], [name] FROM [AppCodes]"
                 Dim rs = Command.ExecuteReader
                 While rs.Read
-                    AddApplication(rs(0), rs(1))
+                    AddApplication(rs(0), RemoveQuotes(rs(1)))
                 End While
                 rs.Close()
 
                 Command.CommandText = "SELECT [code], [name] FROM [ComputerCodes]"
                 rs = Command.ExecuteReader
                 While rs.Read
-                    AddComputer(rs(0), rs(1))
+                    AddComputer(rs(0), RemoveQuotes(rs(1)))
                 End While
                 rs.Close()
 
                 Command.CommandText = "SELECT [code], [name] FROM [EventCodes]"
                 rs = Command.ExecuteReader
                 While rs.Read
-                    AddEvent(rs(0), rs(1))
+                    AddEvent(rs(0), RemoveQuotes(rs(1)))
                 End While
                 rs.Close()
 
@@ -976,7 +988,7 @@ Public Class EventLogProcessor
                 Command.CommandText = "SELECT [code], [name] FROM [WorkServerCodes]"
                 rs = Command.ExecuteReader
                 While rs.Read
-                    AddServer(rs(0), rs(1))
+                    AddServer(rs(0), RemoveQuotes(rs(1)))
                 End While
                 rs.Close()
 
@@ -1014,6 +1026,22 @@ Public Class EventLogProcessor
         End Try
 
     End Sub
+
+    Function RemoveQuotes(Str As String) As String
+
+        RemoveQuotes = Str
+
+        If RemoveQuotes.StartsWith("""") Then
+            RemoveQuotes = RemoveQuotes.Substring(1)
+        End If
+
+        If RemoveQuotes.EndsWith("""") Then
+            RemoveQuotes = RemoveQuotes.Substring(0, RemoveQuotes.Length - 1)
+        End If
+
+        Return RemoveQuotes
+
+    End Function
 
     Sub FindAndStartParseFiles()
 
