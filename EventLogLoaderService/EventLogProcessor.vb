@@ -150,8 +150,10 @@ Public Class EventLogProcessor
     End Class
 
     Class OneEventRecord
-        Public RowID As Integer
+        Public RowID As Long
         Public DateTime As Date
+        Public ConnectID As Integer
+        Public Severity As Integer
         Public TransactionStatus As String
         Public Transaction As String
         Public TransactionStartTime As Date
@@ -164,33 +166,40 @@ Public Class EventLogProcessor
         Public EventType As String
         Public Comment As String
         Public MetadataID As Integer
+        Public SessionDataSplitCode As Integer
         Public DataStructure As String
         Public DataString As String
+        Public DataType As Integer
         Public ServerID As Integer
         Public MainPortID As Integer
         Public SecondPortID As Integer
-        Public Seance As Integer
+        Public SessionNumber As Integer
         Public Field7 As String
         Public Field8 As String
     End Class
 
     Class ESRecord
+        Public RowID As Long
         Public ServerName As String
         Public DatabaseName As String
         Public DateTime As Date
+        Public Severity As String
         Public EventType As EventType
         Public EventTypeString As String
         Public Computer As String
         Public Application As String
         Public Metadata As Metadata
         Public UserName As User
-        Public Seance As Integer
+        Public SessionNumber As Integer
+        Public ConnectID As Integer
+        Public DataType As Integer
         Public DataStructure As String
         Public DataString As String
         Public Comment As String
         Public PrimaryPort As Integer
         Public SecondaryPort As Integer
         Public Server As String
+        Public SessionDataSplitCode As Integer
     End Class
 
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
@@ -703,7 +712,7 @@ Public Class EventLogProcessor
                     command.Parameters.Add(New SqlParameter("@v14", SqlDbType.Int)).Value = Ev.ServerID
                     command.Parameters.Add(New SqlParameter("@v15", SqlDbType.Int)).Value = Ev.MainPortID
                     command.Parameters.Add(New SqlParameter("@v16", SqlDbType.Int)).Value = Ev.SecondPortID
-                    command.Parameters.Add(New SqlParameter("@v17", SqlDbType.Int)).Value = Ev.Seance
+                    command.Parameters.Add(New SqlParameter("@v17", SqlDbType.Int)).Value = Ev.SessionNumber
                     command.Parameters.Add(New SqlParameter("@v18", SqlDbType.Char)).Value = Ev.Field7
                     command.Parameters.Add(New SqlParameter("@v19", SqlDbType.Char)).Value = Ev.Field8
                     command.Parameters.Add(New SqlParameter("@v20", SqlDbType.DateTime)).Value = Ev.TransactionStartTime
@@ -768,7 +777,7 @@ Public Class EventLogProcessor
                     command.Parameters.Add(New MySqlParameter("@v14", MySqlDbType.Int32)).Value = Ev.ServerID
                     command.Parameters.Add(New MySqlParameter("@v15", MySqlDbType.Int32)).Value = Ev.MainPortID
                     command.Parameters.Add(New MySqlParameter("@v16", MySqlDbType.Int32)).Value = Ev.SecondPortID
-                    command.Parameters.Add(New MySqlParameter("@v17", MySqlDbType.Int32)).Value = Ev.Seance
+                    command.Parameters.Add(New MySqlParameter("@v17", MySqlDbType.Int32)).Value = Ev.SessionNumber
                     command.Parameters.Add(New MySqlParameter("@v18", MySqlDbType.VarChar)).Value = Ev.Field7
                     command.Parameters.Add(New MySqlParameter("@v19", MySqlDbType.VarChar)).Value = Ev.Field8
                     command.Parameters.Add(New MySqlParameter("@v20", MySqlDbType.DateTime)).Value = Ev.TransactionStartTime
@@ -807,12 +816,29 @@ Public Class EventLogProcessor
             Dim NewRecords As List(Of ESRecord) = New List(Of ESRecord)
             For Each EventRecord In EventsList
                 Dim ESRecord = New ESRecord With {.ServerName = ESServerName, .DatabaseName = InfobaseName}
+                ESRecord.RowID = EventRecord.RowID
+
+                Select Case EventRecord.Severity
+                    Case 1
+                        ESRecord.Severity = "Information"
+                    Case 2
+                        ESRecord.Severity = "Warning"
+                    Case 3
+                        ESRecord.Severity = "Error"
+                    Case 4
+                        ESRecord.Severity = "Note"
+                End Select
+
                 ESRecord.DateTime = EventRecord.DateTime
-                ESRecord.Seance = EventRecord.Seance
+                ESRecord.ConnectID = EventRecord.ConnectID
+                ESRecord.DataType = EventRecord.DataType
+                ESRecord.SessionNumber = EventRecord.SessionNumber
                 ESRecord.DataStructure = EventRecord.DataStructure
                 ESRecord.DataString = EventRecord.DataString
                 ESRecord.Comment = EventRecord.Comment
                 ESRecord.EventTypeString = EventRecord.EventType
+                ESRecord.SessionDataSplitCode = EventRecord.SessionDataSplitCode
+
 
                 Dim EventObj = New EventType
                 If DictEvents.TryGetValue(EventRecord.EventID, EventObj) Then
@@ -1104,16 +1130,39 @@ Public Class EventLogProcessor
             Dim Command = New System.Data.SQLite.SQLiteCommand
             Command.Connection = Conn
 
-            Dim ANSI = Text.Encoding.GetEncoding(1251)
+            Dim ANSI = Text.Encoding.GetEncoding(1252)
             Dim UTF8 = Text.Encoding.UTF8
 
             While True
 
-                Command.CommandText = "SELECT [rowID],[severity],[date],[connectID],[session]" +
-                                        ",[transactionStatus],[transactionDate],[transactionID],[userCode],[computerCode],[appCode]" +
-                                        ",[eventCode],[comment],[metadataCodes],[sessionDataSplitCode],[dataType],[data]" +
-                                        ",[dataPresentation],[workServerCode],[primaryPortCode],[secondaryPortCode]" +
-                                        " FROM [EventLog] WHERE [rowID] > " + LastEventNumber83.ToString + " LIMIT 1000"
+                Command.CommandText = "SELECT 
+                                            [rowID],
+                                            [severity],
+                                            [date],
+                                            [connectID],
+                                            [session],
+                                            [transactionStatus],
+                                            [transactionDate],
+                                            [transactionID],
+                                            [userCode],
+                                            [computerCode],
+                                            [appCode],
+                                            [eventCode],
+                                            [comment],
+                                            [metadataCodes],
+                                            [sessionDataSplitCode],--
+                                            [dataType],
+                                            [data],
+                                            [dataPresentation],
+                                            [workServerCode],
+                                            [primaryPortCode],
+                                            [secondaryPortCode]
+                                        FROM [EventLog] 
+                                        WHERE [rowID] > @LastEventNumber83 
+                                        ORDER BY 1
+                                        LIMIT 1000"
+
+                Command.Parameters.AddWithValue("LastEventNumber83", LastEventNumber83)
                 Dim rs = Command.ExecuteReader
 
                 Dim HasData = rs.HasRows
@@ -1121,6 +1170,8 @@ Public Class EventLogProcessor
 
                     Dim OneEvent = New OneEventRecord
                     OneEvent.RowID = rs("rowID")
+                    OneEvent.Severity = rs("severity")
+                    OneEvent.ConnectID = rs("connectID")
                     OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000))
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
@@ -1156,11 +1207,13 @@ Public Class EventLogProcessor
                     End If
                     OneEvent.DataStructure = s
 
+                    OneEvent.DataType = rs("dataType")
                     OneEvent.DataString = rs("dataPresentation")
                     OneEvent.ServerID = rs("workServerCode")
                     OneEvent.MainPortID = rs("primaryPortCode")
                     OneEvent.SecondPortID = rs("secondaryPortCode")
-                    OneEvent.Seance = rs("session")
+                    OneEvent.SessionNumber = rs("session")
+                    OneEvent.SessionDataSplitCode = rs("sessionDataSplitCode")
 
                     OneEvent.Transaction = ""
                     OneEvent.Field2 = ""
@@ -1420,7 +1473,7 @@ Public Class EventLogProcessor
         OneEvent.ServerID = Convert.ToInt32(Array(13))
         OneEvent.MainPortID = Convert.ToInt32(Array(14))
         OneEvent.SecondPortID = Convert.ToInt32(Array(15))
-        OneEvent.Seance = Convert.ToInt32(Array(16))
+        OneEvent.SessionNumber = Convert.ToInt32(Array(16))
         OneEvent.Field7 = Array(17)
         OneEvent.Field8 = Array(18)
 
