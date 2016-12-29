@@ -3,18 +3,18 @@
 Public Module ConfigSettingsModule
 
     Class InfobaseSetting
-        Public ESServerName As String
-        Public DatabaseID As String
-        Public DatabaseName As String
-        Public DatabaseCatalog As String
-        Public Found As Boolean
+        Public ESServerName As String = ""
+        Public DatabaseID As String = ""
+        Public DatabaseName As String = ""
+        Public DatabaseCatalog As String = ""
+        Public Found As Boolean = False
     End Class
 
     Class ConfigSetting
-        Public ConnectionString As String
-        Public DBType As String
-        Public RepeatTime As Integer
-        Public ESIndexName As String
+        Public ConnectionString As String = ""
+        Public DBType As String = ""
+        Public RepeatTime As Integer = 0
+        Public ESIndexName As String = ""
         Public Infobases As List(Of InfobaseSetting)
         Sub New()
             Infobases = New List(Of InfobaseSetting)
@@ -33,7 +33,7 @@ Public Module ConfigSettingsModule
 
         End If
 
-        Return Nothing
+        Return New ConfigSetting
 
     End Function
 
@@ -42,7 +42,6 @@ Public Module ConfigSettingsModule
         Dim JsonText As String = JsonConvert.SerializeObject(ConfigSettingObj, Formatting.Indented)
 
         My.Computer.FileSystem.WriteAllText(ConfigFilePath, JsonText, False)
-
 
     End Sub
 

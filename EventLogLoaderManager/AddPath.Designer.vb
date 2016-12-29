@@ -34,6 +34,8 @@ Partial Class AddPath
         Me.Button2 = New System.Windows.Forms.Button()
         Me.FolderBrowserDialog = New System.Windows.Forms.FolderBrowserDialog()
         Me.ButtonChoosePath = New System.Windows.Forms.Button()
+        Me.Label5 = New System.Windows.Forms.Label()
+        Me.ESServerNameTextBox = New System.Windows.Forms.TextBox()
         Me.SuspendLayout()
         '
         'IBName
@@ -57,7 +59,7 @@ Partial Class AddPath
         'Label2
         '
         Me.Label2.AutoSize = True
-        Me.Label2.Location = New System.Drawing.Point(12, 40)
+        Me.Label2.Location = New System.Drawing.Point(12, 67)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(57, 13)
         Me.Label2.TabIndex = 1
@@ -67,7 +69,7 @@ Partial Class AddPath
         '
         Me.Description.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Description.Location = New System.Drawing.Point(145, 37)
+        Me.Description.Location = New System.Drawing.Point(145, 64)
         Me.Description.Name = "Description"
         Me.Description.Size = New System.Drawing.Size(268, 20)
         Me.Description.TabIndex = 0
@@ -76,7 +78,7 @@ Partial Class AddPath
         '
         Me.IBGUID.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.IBGUID.Location = New System.Drawing.Point(145, 62)
+        Me.IBGUID.Location = New System.Drawing.Point(145, 89)
         Me.IBGUID.Name = "IBGUID"
         Me.IBGUID.ReadOnly = True
         Me.IBGUID.Size = New System.Drawing.Size(268, 20)
@@ -85,7 +87,7 @@ Partial Class AddPath
         'Label3
         '
         Me.Label3.AutoSize = True
-        Me.Label3.Location = New System.Drawing.Point(12, 65)
+        Me.Label3.Location = New System.Drawing.Point(12, 92)
         Me.Label3.Name = "Label3"
         Me.Label3.Size = New System.Drawing.Size(34, 13)
         Me.Label3.TabIndex = 1
@@ -95,7 +97,7 @@ Partial Class AddPath
         '
         Me.Path.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Path.Location = New System.Drawing.Point(145, 88)
+        Me.Path.Location = New System.Drawing.Point(145, 115)
         Me.Path.Name = "Path"
         Me.Path.Size = New System.Drawing.Size(244, 20)
         Me.Path.TabIndex = 0
@@ -103,7 +105,7 @@ Partial Class AddPath
         'Label4
         '
         Me.Label4.AutoSize = True
-        Me.Label4.Location = New System.Drawing.Point(12, 91)
+        Me.Label4.Location = New System.Drawing.Point(12, 118)
         Me.Label4.Name = "Label4"
         Me.Label4.Size = New System.Drawing.Size(119, 13)
         Me.Label4.TabIndex = 1
@@ -112,7 +114,7 @@ Partial Class AddPath
         'Button1
         '
         Me.Button1.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(204, Byte))
-        Me.Button1.Location = New System.Drawing.Point(12, 114)
+        Me.Button1.Location = New System.Drawing.Point(12, 141)
         Me.Button1.Name = "Button1"
         Me.Button1.Size = New System.Drawing.Size(200, 43)
         Me.Button1.TabIndex = 2
@@ -122,7 +124,7 @@ Partial Class AddPath
         'Button2
         '
         Me.Button2.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(204, Byte))
-        Me.Button2.Location = New System.Drawing.Point(218, 114)
+        Me.Button2.Location = New System.Drawing.Point(218, 141)
         Me.Button2.Name = "Button2"
         Me.Button2.Size = New System.Drawing.Size(200, 43)
         Me.Button2.TabIndex = 2
@@ -135,18 +137,39 @@ Partial Class AddPath
         '
         'ButtonChoosePath
         '
-        Me.ButtonChoosePath.Location = New System.Drawing.Point(391, 88)
+        Me.ButtonChoosePath.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.ButtonChoosePath.Location = New System.Drawing.Point(391, 115)
         Me.ButtonChoosePath.Name = "ButtonChoosePath"
         Me.ButtonChoosePath.Size = New System.Drawing.Size(24, 20)
         Me.ButtonChoosePath.TabIndex = 3
         Me.ButtonChoosePath.Text = "..."
         Me.ButtonChoosePath.UseVisualStyleBackColor = True
         '
+        'Label5
+        '
+        Me.Label5.AutoSize = True
+        Me.Label5.Location = New System.Drawing.Point(12, 41)
+        Me.Label5.Name = "Label5"
+        Me.Label5.Size = New System.Drawing.Size(112, 13)
+        Me.Label5.TabIndex = 5
+        Me.Label5.Text = "Имя сервера для ES"
+        '
+        'ESServerNameTextBox
+        '
+        Me.ESServerNameTextBox.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.ESServerNameTextBox.Location = New System.Drawing.Point(145, 38)
+        Me.ESServerNameTextBox.Name = "ESServerNameTextBox"
+        Me.ESServerNameTextBox.Size = New System.Drawing.Size(268, 20)
+        Me.ESServerNameTextBox.TabIndex = 4
+        '
         'AddPath
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(425, 163)
+        Me.ClientSize = New System.Drawing.Size(425, 188)
+        Me.Controls.Add(Me.Label5)
+        Me.Controls.Add(Me.ESServerNameTextBox)
         Me.Controls.Add(Me.ButtonChoosePath)
         Me.Controls.Add(Me.Button2)
         Me.Controls.Add(Me.Button1)
@@ -177,4 +200,6 @@ Partial Class AddPath
     Friend WithEvents Button2 As System.Windows.Forms.Button
     Friend WithEvents FolderBrowserDialog As System.Windows.Forms.FolderBrowserDialog
     Friend WithEvents ButtonChoosePath As System.Windows.Forms.Button
+    Friend WithEvents Label5 As Label
+    Friend WithEvents ESServerNameTextBox As TextBox
 End Class

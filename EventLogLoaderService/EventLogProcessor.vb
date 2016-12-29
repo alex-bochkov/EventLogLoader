@@ -185,7 +185,6 @@ Public Class EventLogProcessor
         Public DateTime As Date
         Public Severity As String
         Public EventType As EventType
-        Public EventTypeString As String
         Public Computer As String
         Public Application As String
         Public Metadata As Metadata
@@ -836,7 +835,7 @@ Public Class EventLogProcessor
                 ESRecord.DataStructure = EventRecord.DataStructure
                 ESRecord.DataString = EventRecord.DataString
                 ESRecord.Comment = EventRecord.Comment
-                ESRecord.EventTypeString = EventRecord.EventType
+                'ESRecord.EventTypeString = EventRecord.EventType - this is severity
                 ESRecord.SessionDataSplitCode = EventRecord.SessionDataSplitCode
 
 
@@ -1171,6 +1170,7 @@ Public Class EventLogProcessor
                     Dim OneEvent = New OneEventRecord
                     OneEvent.RowID = rs("rowID")
                     OneEvent.Severity = rs("severity")
+
                     OneEvent.ConnectID = rs("connectID")
                     OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000))
                     OneEvent.TransactionStatus = rs("transactionStatus")
@@ -1408,14 +1408,6 @@ Public Class EventLogProcessor
 
     End Sub
 
-    Function DeleteQuote(Str As String)
-
-        Dim SubStr = Str.Substring(1, Str.Length - 2)
-
-        Return SubStr
-
-    End Function
-
     Function From16To10(Str As String)
 
         From16To10 = 0
@@ -1466,16 +1458,46 @@ Public Class EventLogProcessor
         OneEvent.Field2 = Array(6)
         OneEvent.EventID = Convert.ToInt32(Array(7))
         OneEvent.EventType = Array(8)
-        OneEvent.Comment = DeleteQuote(Array(9))
+        OneEvent.Comment = RemoveQuotes(Array(9))
         OneEvent.MetadataID = Convert.ToInt32(Array(10))
         OneEvent.DataStructure = Array(11)
-        OneEvent.DataString = DeleteQuote(Array(12))
+        OneEvent.DataString = RemoveQuotes(Array(12))
         OneEvent.ServerID = Convert.ToInt32(Array(13))
         OneEvent.MainPortID = Convert.ToInt32(Array(14))
         OneEvent.SecondPortID = Convert.ToInt32(Array(15))
         OneEvent.SessionNumber = Convert.ToInt32(Array(16))
         OneEvent.Field7 = Array(17)
         OneEvent.Field8 = Array(18)
+
+        '*************************************************************************
+        'Additional parsing to make sure that data looks the same between old and new EventLog formats
+        If OneEvent.DataStructure = "{""U""}" Then 'empty reference
+            OneEvent.DataStructure = ""
+        ElseIf OneEvent.DataStructure.StartsWith("{") Then
+            'internal representation for different objects.
+            Dim ParsedObject = ParserServices.ParseEventlogString(OneEvent.DataStructure)
+            If ParsedObject.Length = 2 Then
+                If ParsedObject(0) = """S""" _
+                    Or ParsedObject(0) = """R""" Then 'this is string or reference 
+
+                    OneEvent.DataStructure = RemoveQuotes(ParsedObject(1)) 'string value
+
+                End If
+
+            End If
+
+        End If
+
+        Select Case OneEvent.EventType
+            Case "I"
+                OneEvent.Severity = 1 '"Information"
+            Case "W"
+                OneEvent.Severity = 2 '"Warning"
+            Case "E"
+                OneEvent.Severity = 3'"Error"
+            Case "N"
+                OneEvent.Severity = 4 '"Note"
+        End Select
 
         '*************************************************************************
 

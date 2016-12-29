@@ -14,13 +14,29 @@ Public Class Form1
 
     Dim ConfigSetting As ConfigSetting = New ConfigSetting
 
-    Sub LoadFromIniFile()
+    Sub LoadConfigSetting()
 
         ConfigSetting = ConfigSettingsModule.LoadConfigSettingFromFile(PathConfigFile)
+
+        If ConfigSetting.RepeatTime = 0 Then
+            ConfigSetting.RepeatTime = 60
+        End If
+
+        If String.IsNullOrEmpty(ConfigSetting.ESIndexName) Then
+            ConfigSetting.ESIndexName = "event-log"
+        End If
+
+        If String.IsNullOrEmpty(ConfigSetting.DBType) Then
+            ConfigSetting.DBType = "ElasticSearch"
+            If String.IsNullOrEmpty(ConfigSetting.ConnectionString) Then
+                ConfigSetting.ConnectionString = "http://localhost:9200/"
+            End If
+        End If
 
         ConnectionStringBox.Text = ConfigSetting.ConnectionString
         DBType.Text = ConfigSetting.DBType
         RepeatTime.Text = ConfigSetting.RepeatTime.ToString
+        ESIndexNameTextBox.Text = ConfigSetting.ESIndexName
 
     End Sub
 
@@ -43,16 +59,16 @@ Public Class Form1
 
     End Function
 
-    Function FindInfobaseInSavedParams(Guid As String) As Boolean
-
-        FindInfobaseInSavedParams = False
+    Function FindInfobaseInSavedParams(Guid As String) As InfobaseSetting
 
         For Each IB In ConfigSetting.Infobases
             If IB.DatabaseID = Guid Then
                 IB.Found = True
-                Return True
+                Return IB
             End If
         Next
+
+        Return New InfobaseSetting
 
     End Function
 
@@ -69,6 +85,7 @@ Public Class Form1
                 IBSetting.DatabaseID = Item.SubItems(1).Text
                 IBSetting.DatabaseName = Item.SubItems(0).Text
                 IBSetting.DatabaseCatalog = Item.SubItems(4).Text
+                IBSetting.ESServerName = Item.SubItems(5).Text
 
                 ConfigSetting.Infobases.Add(IBSetting)
 
@@ -92,9 +109,11 @@ Public Class Form1
                     sc.Start()
                     sc.WaitForStatus(ServiceProcess.ServiceControllerStatus.Running)
                 End If
+            Else
+                MsgBox("Параметры успешно изменены.", MsgBoxStyle.OkOnly, Text)
             End If
         Catch ex As Exception
-
+            MsgBox("Параметры успешно изменены.", MsgBoxStyle.OkOnly, Text)
         End Try
 
 
@@ -145,13 +164,9 @@ Public Class Form1
 
         Text = My.Application.Info.ProductName + " / " + My.Application.Info.Copyright
 
-        LoadFromIniFile()
+        LoadConfigSetting()
 
         RefreshInfobaseList()
-
-        If RepeatTime.Text = String.Empty Then
-            RepeatTime.Text = 60
-        End If
 
     End Sub
 
@@ -188,12 +203,15 @@ Public Class Form1
             If Not Serv.ArrayInfobases Is Nothing Then
                 For Each a In Serv.ArrayInfobases
 
+                    Dim SavedIB As InfobaseSetting = FindInfobaseInSavedParams(a.GUID)
+
                     Dim item1 = New ListViewItem(a.Name, Group)
-                    item1.Checked = FindInfobaseInSavedParams(a.GUID)
+                    item1.Checked = (Not String.IsNullOrEmpty(SavedIB.DatabaseID))
                     item1.SubItems.Add(a.GUID)
                     item1.SubItems.Add(a.Description)
                     item1.SubItems.Add(a.SizeEventLog.ToString)
                     item1.SubItems.Add(a.CatalogEventLog)
+                    item1.SubItems.Add(SavedIB.ESServerName) 'ESServerName
 
                     ListView.Items.Add(item1)
 
@@ -209,12 +227,15 @@ Public Class Form1
 
             For Each a In FileIbases
 
+                Dim SavedIB As InfobaseSetting = FindInfobaseInSavedParams(a.GUID)
+
                 Dim item1 = New ListViewItem(a.Name, Group)
-                item1.Checked = FindInfobaseInSavedParams(a.GUID)
+                item1.Checked = (Not String.IsNullOrEmpty(SavedIB.DatabaseID))
                 item1.SubItems.Add(a.GUID)
                 item1.SubItems.Add(a.Description)
                 item1.SubItems.Add(a.SizeEventLog.ToString)
                 item1.SubItems.Add(a.CatalogEventLog)
+                item1.SubItems.Add(SavedIB.ESServerName) 'ESServerName
 
                 ListView.Items.Add(item1)
 
@@ -233,6 +254,7 @@ Public Class Form1
                 item1.SubItems.Add("")
                 item1.SubItems.Add(CalcullateFolderSize(IB.DatabaseCatalog))
                 item1.SubItems.Add(IB.DatabaseCatalog)
+                item1.SubItems.Add(IB.ESServerName)
 
                 ListView.Items.Add(item1)
             End If
@@ -400,6 +422,7 @@ Public Class Form1
             item1.SubItems.Add(AddPath.Description.Text)
             item1.SubItems.Add(CalcullateFolderSize(AddPath.Path.Text))
             item1.SubItems.Add(AddPath.Path.Text)
+            item1.SubItems.Add(AddPath.ESServerNameTextBox.Text)
 
             ListView.Items.Add(item1)
 
@@ -415,31 +438,48 @@ Public Class Form1
 
         Dim item As ListViewItem = sender.SelectedItems(0)
 
-        If item.Group Is GroupExtraPath Then
-            Dim AddPath = New AddPath
-            AddPath.IBName.Text = item.Text
-            AddPath.IBGUID.Text = item.SubItems(1).Text
-            AddPath.Description.Text = item.SubItems(2).Text
-            AddPath.Path.Text = item.SubItems(4).Text
-            AddPath.ExistedRow = True
-            AddPath.ShowDialog()
+        'If item.Group Is GroupExtraPath Then
+        Dim AddPath = New AddPath
+        AddPath.IBName.Text = item.Text
+        AddPath.IBGUID.Text = item.SubItems(1).Text
+        AddPath.ESServerNameTextBox.Text = item.SubItems(5).Text
+        AddPath.Description.Text = item.SubItems(2).Text
+        AddPath.Path.Text = item.SubItems(4).Text
+        AddPath.ExistedRow = True
+        AddPath.ShowDialog()
 
-            If AddPath.Success Then
-                item.SubItems.Clear()
+        If AddPath.Success Then
 
-                item.Text = AddPath.IBName.Text
-                item.SubItems.Add(AddPath.IBGUID.Text)
-                item.SubItems.Add(AddPath.Description.Text)
-                item.SubItems.Add(CalcullateFolderSize(AddPath.Path.Text))
-                item.SubItems.Add(AddPath.Path.Text)
-            End If
+            item.SubItems.Clear()
 
-
+            item.Text = AddPath.IBName.Text
+            item.SubItems.Add(AddPath.IBGUID.Text)
+            item.SubItems.Add(AddPath.Description.Text)
+            item.SubItems.Add(CalcullateFolderSize(AddPath.Path.Text))
+            item.SubItems.Add(AddPath.Path.Text)
+            item.SubItems.Add(AddPath.ESServerNameTextBox.Text)
 
         End If
 
 
 
+        'End If
+
+
+
     End Sub
 
+
+
+    Private Sub LinkLabel2_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel2.LinkClicked
+        Process.Start("https://github.com/alekseybochkov/")
+    End Sub
+
+    Private Sub LinkLabel1_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel1.LinkClicked
+        Process.Start("http://infostart.ru/public/182820/")
+    End Sub
+
+    Private Sub LinkLabel3_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel3.LinkClicked
+        Process.Start("https://github.com/alekseybochkov/EventLogLoader/")
+    End Sub
 End Class
