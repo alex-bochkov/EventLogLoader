@@ -671,71 +671,92 @@ Public Class EventLogProcessor
         End If
 
         If ItIsMSSQL Then
+
             Dim objConn As New SqlConnection(ConnectionString)
             objConn.Open()
 
-            Dim command As New SqlCommand("BEGIN TRANSACTION", objConn)
-            command.ExecuteNonQuery()
+            Dim dt = New DataTable
+            For jj = 1 To 22
+                dt.Columns.Add(New DataColumn())
+            Next
 
-            command.CommandText = "INSERT INTO [dbo].[Events] ([InfobaseCode],[DateTime],[TransactionStatus],[Transaction],[UserName],[ComputerName]" +
-                                      ",[AppName],[Field2],[EventID],[EventType],[Comment],[MetadataID],[DataStructure],[DataString]" +
-                                      ",[ServerID],[MainPortID],[SecondPortID],[Seance],[Field7],[Field8],[TransactionStartTime],[TransactionMark])" +
-                                      " VALUES(@v0,@v1,@v2,@v3,@v4,@v5,@v6,@v7,@v8,@v9,@v10,@v11,@v12,@v13,@v14,@v15,@v16,@v17,@v18,@v19,@v20,@v21)"
-
-            Dim i = 0
             For Each Ev In EventsList
 
                 If Ev.AppName = Nothing Then Continue For
 
-                Try
-                    command.Parameters.Clear()
-                    command.Parameters.Add(New SqlParameter("@v0", SqlDbType.Int)).Value = InfobaseID
-                    command.Parameters.Add(New SqlParameter("@v1", SqlDbType.DateTime)).Value = Ev.DateTime
-                    command.Parameters.Add(New SqlParameter("@v2", SqlDbType.Char)).Value = Ev.TransactionStatus
-                    command.Parameters.Add(New SqlParameter("@v3", SqlDbType.Char)).Value = Ev.Transaction
-                    command.Parameters.Add(New SqlParameter("@v4", SqlDbType.Int)).Value = Ev.UserName
-                    command.Parameters.Add(New SqlParameter("@v5", SqlDbType.Int)).Value = Ev.ComputerName
-                    command.Parameters.Add(New SqlParameter("@v6", SqlDbType.Int)).Value = Ev.AppName
-                    command.Parameters.Add(New SqlParameter("@v7", SqlDbType.Char)).Value = Ev.Field2
-                    command.Parameters.Add(New SqlParameter("@v8", SqlDbType.Int)).Value = Ev.EventID
-                    command.Parameters.Add(New SqlParameter("@v9", SqlDbType.Char)).Value = Ev.EventType
-                    command.Parameters.Add(New SqlParameter("@v10", SqlDbType.VarChar)).Value = Ev.Comment
-                    command.Parameters.Add(New SqlParameter("@v11", SqlDbType.Int)).Value = Ev.MetadataID
+                Dim Data(21)
 
-                    If Ev.DataStructure.Length > 100 Then
-                        Ev.DataStructure = Ev.DataStructure.Substring(0, 99)
-                    End If
-                    command.Parameters.Add(New SqlParameter("@v12", SqlDbType.Char)).Value = Ev.DataStructure
+                'Select [InfobaseCode]
+                '    ,[DateTime]
+                '    ,[TransactionStatus]
+                '    ,[TransactionStartTime]
+                '    ,[TransactionMark]
+                '    ,[Transaction]
+                '    ,[UserName]
+                '    ,[ComputerName]
+                '    ,[AppName]
+                '    ,[Field2]
+                '    ,[EventID]
+                '    ,[EventType]
+                '    ,[Comment]
+                '    ,[MetadataID]
+                '    ,[DataStructure]
+                '    ,[DataString]
+                '    ,[ServerID]
+                '    ,[MainPortID]
+                '    ,[SecondPortID]
+                '    ,[Seance]
+                '    ,[Field7]
+                '    ,[Field8]
+                'FROM [EventLog].[dbo].[Events]
 
-                    command.Parameters.Add(New SqlParameter("@v13", SqlDbType.VarChar)).Value = Ev.DataString
-                    command.Parameters.Add(New SqlParameter("@v14", SqlDbType.Int)).Value = Ev.ServerID
-                    command.Parameters.Add(New SqlParameter("@v15", SqlDbType.Int)).Value = Ev.MainPortID
-                    command.Parameters.Add(New SqlParameter("@v16", SqlDbType.Int)).Value = Ev.SecondPortID
-                    command.Parameters.Add(New SqlParameter("@v17", SqlDbType.Int)).Value = Ev.SessionNumber
-                    command.Parameters.Add(New SqlParameter("@v18", SqlDbType.Char)).Value = Ev.Field7
-                    command.Parameters.Add(New SqlParameter("@v19", SqlDbType.Char)).Value = Ev.Field8
-                    command.Parameters.Add(New SqlParameter("@v20", SqlDbType.DateTime)).Value = Ev.TransactionStartTime
-                    command.Parameters.Add(New SqlParameter("@v21", SqlDbType.BigInt)).Value = Ev.TransactionMark
+                Data(0) = InfobaseID
+                Data(1) = Ev.DateTime
+                Data(2) = Ev.TransactionStatus
+                Data(3) = Ev.TransactionStartTime
+                Data(4) = Ev.TransactionMark
+                Data(5) = Ev.Transaction
+                Data(6) = Ev.UserName
+                Data(7) = Ev.ComputerName
+                Data(8) = Ev.AppName
+                Data(9) = Ev.Field2
+                Data(10) = Ev.EventID
+                Data(11) = Ev.EventType
+                Data(12) = Ev.Comment
+                Data(13) = Ev.MetadataID
 
-                    command.ExecuteNonQuery()
-                    i += 1
-                Catch ex As Exception
-                    Log.Error("Ошибка сохранения в БД записи от " + Ev.DateTime.ToString +
-                                       " по ИБ " + InfobaseName + " : " + ex.Message)
-                End Try
+                If Ev.DataStructure.Length > 100 Then
+                    Ev.DataStructure = Ev.DataStructure.Substring(0, 99)
+                End If
+                Data(14) = Ev.DataStructure
 
+                Data(15) = Ev.DataString
+                Data(16) = Ev.ServerID
+                Data(17) = Ev.MainPortID
+                Data(18) = Ev.SecondPortID
+                Data(19) = Ev.SessionNumber
+                Data(20) = Ev.Field7
+                Data(21) = Ev.Field8
+
+
+                Dim row As DataRow = dt.NewRow()
+                row.ItemArray = Data
+                dt.Rows.Add(row)
 
             Next
 
+            Using copy As New SqlBulkCopy(objConn)
+                For jj = 0 To 21
+                    copy.ColumnMappings.Add(jj, jj)
+                Next
+                copy.DestinationTableName = "Events"
+                copy.WriteToServer(dt)
+            End Using
+
             SaveReadParametersToFile()
 
-            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + i.ToString)
+            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + EventsList.Count.ToString)
 
-            command.CommandText = "COMMIT TRANSACTION"
-            command.Parameters.Clear()
-            command.ExecuteNonQuery()
-
-            command.Dispose()
             objConn.Close()
             objConn.Dispose()
 
