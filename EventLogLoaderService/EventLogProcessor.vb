@@ -1300,6 +1300,7 @@ Public Class EventLogProcessor
         Dim NewLine = True
         Dim StrEvent = ""
         Dim CountBracket = 0
+        Dim TextBlockOpen = False
         Dim Position = CurrentPosition
         'Dim WasReadSomeString = False
 
@@ -1335,7 +1336,7 @@ Public Class EventLogProcessor
                 StrEvent = StrEvent + vbNewLine + TextLine
             End If
 
-            If ItsEndOfEvent(TextLine, CountBracket) Then
+            If ItsEndOfEvent(TextLine, CountBracket, TextBlockOpen) Then
                 NewLine = True
                 If Not StrEvent Is Nothing Then
                     Try
@@ -1361,12 +1362,11 @@ Public Class EventLogProcessor
 
     End Sub
 
-    Function ItsEndOfEvent(Str As String, ByRef Count As Integer)
+    Function ItsEndOfEvent(Str As String, ByRef Count As Integer, ByRef TextBlockOpen As Boolean)
 
         ItsEndOfEvent = False
 
         Dim TempStr = Str
-        Dim TextBlockOpen = False
 
         For i = 0 To TempStr.Length - 1
             Dim Simb = TempStr.Substring(i, 1)
