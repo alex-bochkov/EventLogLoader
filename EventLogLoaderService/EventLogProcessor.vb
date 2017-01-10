@@ -724,12 +724,7 @@ Public Class EventLogProcessor
                 Data(11) = Ev.EventType
                 Data(12) = Ev.Comment
                 Data(13) = Ev.MetadataID
-
-                If Ev.DataStructure.Length > 100 Then
-                    Ev.DataStructure = Ev.DataStructure.Substring(0, 99)
-                End If
                 Data(14) = Ev.DataStructure
-
                 Data(15) = Ev.DataString
                 Data(16) = Ev.ServerID
                 Data(17) = Ev.MainPortID
@@ -737,7 +732,6 @@ Public Class EventLogProcessor
                 Data(19) = Ev.SessionNumber
                 Data(20) = Ev.Field7
                 Data(21) = Ev.Field8
-
 
                 Dim row As DataRow = dt.NewRow()
                 row.ItemArray = Data

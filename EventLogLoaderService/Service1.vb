@@ -172,26 +172,26 @@ Public Class EventLogLoaderService
                 Dim command As New SqlCommand("IF NOT EXISTS (select * from sysobjects where id = object_id(N'Events'))
                                                 BEGIN
                                                   CREATE TABLE [dbo].[Events]([InfobaseCode] int Not NULL, [DateTime] [datetime] Not NULL, 
-                                                        [TransactionStatus] [char](1) NULL,	
+                                                        [TransactionStatus] [varchar](1) NULL,	
                                                         [TransactionStartTime] [datetime] NULL, 
                                               		    [TransactionMark] bigint NULL,	
-                                                        [Transaction] [char](100) NULL,	
+                                                        [Transaction] [varchar](100) NULL,	
                                               		    [UserName] int NULL,	
                                               	        [ComputerName] int NULL,	
                                               		    [AppName] Int NULL, 
-                                                        [Field2] [char](100) NULL,	
+                                                        [Field2] [varchar](100) NULL,	
                                                         [EventID] int NULL, 
-                                              		    [EventType] [char](1) NULL,	
-                                                        [Comment] [varchar](max) NULL,	
+                                              		    [EventType] [varchar](1) NULL,	
+                                                        [Comment] [nvarchar](max) NULL,	
                                               		    [MetadataID] int NULL,	
-                                              		    [DataStructure] [Char](100) NULL, 
-                                              		    [DataString] [varchar](max) NULL,	
+                                              		    [DataStructure] [nvarchar](max) NULL, 
+                                              		    [DataString] [nvarchar](max) NULL,	
                                                         [ServerID] int NULL, 
                                               		    [MainPortID] int NULL,	
                                                         [SecondPortID] int NULL, 
                                               		    [Seance] int NULL,	
-                                                        [Field7] [char](100) NULL,	
-                                              		    [Field8] [char](100) NULL);
+                                                        [Field7] [varchar](100) NULL,	
+                                              		    [Field8] [varchar](100) NULL);
                                                     CREATE CLUSTERED INDEX [CIX_Events] ON [dbo].[Events]([InfobaseCode], [DateTime])
                                                 END", objConn)
                 command.ExecuteNonQuery()
@@ -274,7 +274,7 @@ Public Class EventLogLoaderService
                     "`TransactionStatus` varchar(1) NULL, `TransactionStartTime` datetime NULL,	" +
                     "`TransactionMark` bigint NULL, `Transaction` varchar(100) NULL,	`UserName` int(11) NULL, `ComputerName` int(11) NULL,	" +
                     "`AppName` int(11) NULL, `Field2` varchar(100) NULL,	`EventID` int(11) NULL, `EventType` varchar(1) NULL,	" +
-                    "`Comment` text NULL, `MetadataID` int(11) NULL,	`DataStructure` varchar(100) NULL, `DataString` text NULL,	" +
+                    "`Comment` text NULL, `MetadataID` int(11) NULL,	`DataStructure` text NULL, `DataString` text NULL,	" +
                     "`ServerID` int(11) NULL, `MainPortID` int(11) NULL,	`SecondPortID` int(11) NULL, `Seance` int(11) NULL,	" +
                     "`Field7` varchar(100) NULL, `Field8` varchar(100) NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8;"
