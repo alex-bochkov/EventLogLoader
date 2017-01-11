@@ -182,53 +182,57 @@ Public Class ServiceDescriptionClass
             Dim Text = My.Computer.FileSystem.ReadAllText(TMP)
             My.Computer.FileSystem.DeleteFile(TMP)
 
-            Dim Array = ParserServices.ParseString(Text)
-
             Dim i = 0
 
-            For Each a In Array
-                If Not a Is Nothing Then
-                    If a.Length = 11 And a(0).StartsWith("1.2.") Then
+            Dim ClusterSetting = ParserServices.ParseEventLogString(Text)
 
-                        Dim IB = New Infobases
-                        IB.Name = a(2).ToString
-                        IB.GUID = a(1).ToString
-                        IB.Description = a(3).ToString
-                        IB.SizeEventLog = 0
+            Dim DatabaseSettings = ParserServices.ParseEventLogString(ClusterSetting(2)) 'third element contains all database descriptions
 
-                        Try
+            For Each Row2 As String In DatabaseSettings
 
-                            Dim SizeLog As UInt64 = 0
-                            Dim CatalogEventLog = Path.Combine(Path.Combine(Catalog, IB.GUID), "1Cv8Log\")
+                If Row2.StartsWith("{") Then
+                    'this is an infobase description
+                    Dim DatabaseDescription = ParserServices.ParseEventLogString(Row2)
 
-                            IB.CatalogEventLog = CatalogEventLog
+                    Dim IB = New Infobases
+                    IB.Name = DatabaseDescription(1).ToString
+                    IB.GUID = DatabaseDescription(0).ToString
+                    IB.Description = DatabaseDescription(2).ToString
+                    IB.SizeEventLog = 0
 
-                            If My.Computer.FileSystem.DirectoryExists(CatalogEventLog) Then
+                    Try
 
+                        Dim SizeLog As UInt64 = 0
+                        Dim CatalogEventLog = Path.Combine(Path.Combine(Catalog, IB.GUID), "1Cv8Log\")
 
+                        IB.CatalogEventLog = CatalogEventLog
 
-                                For Each File In My.Computer.FileSystem.GetFiles(CatalogEventLog)
-                                    Dim FI = My.Computer.FileSystem.GetFileInfo(File)
-                                    SizeLog = SizeLog + FI.Length
-                                Next
-
-                                IB.SizeEventLog = Math.Round(SizeLog / 1024 / 1024, 2)
-
-                            End If
-
-                        Catch ex As Exception
-
-                        End Try
-
-                        ReDim Preserve ArrayInfobases(i)
-                        ArrayInfobases(i) = IB
-
-                        i = i + 1
+                        If My.Computer.FileSystem.DirectoryExists(CatalogEventLog) Then
 
 
-                    End If
+
+                            For Each File In My.Computer.FileSystem.GetFiles(CatalogEventLog)
+                                Dim FI = My.Computer.FileSystem.GetFileInfo(File)
+                                SizeLog = SizeLog + FI.Length
+                            Next
+
+                            IB.SizeEventLog = Math.Round(SizeLog / 1024 / 1024, 2)
+
+                        End If
+
+                    Catch ex As Exception
+
+                    End Try
+
+                    ReDim Preserve ArrayInfobases(i)
+                    ArrayInfobases(i) = IB
+
+                    i = i + 1
+
                 End If
+
             Next
+
 
 
             System.Array.Sort(ArrayInfobases)

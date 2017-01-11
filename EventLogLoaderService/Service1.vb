@@ -211,42 +211,42 @@ Public Class EventLogLoaderService
                 '**********************************************************************************
                 command.CommandText =
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'Users'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[Users]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100), [Guid] [char](40));" + vbNewLine +
+                    "CREATE TABLE [dbo].[Users]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100), [Guid] [varchar](40));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'Users') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[Users] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'Metadata'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[Metadata]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100), [Guid] [char](40));" + vbNewLine +
+                    "CREATE TABLE [dbo].[Metadata]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100), [Guid] [varchar](40));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'Metadata') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[Metadata] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'Computers'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[Computers]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[Computers]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'Computers') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[Computers] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'Applications'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[Applications]([InfobaseCode] int NOT NULL, [Code] int NOT NULL,[Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[Applications]([InfobaseCode] int NOT NULL, [Code] int NOT NULL,[Name] [nvarchar](100));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'Applications') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[Applications] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'EventsType'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[EventsType]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[EventsType]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](max));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'EventsType') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[EventsType] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'Servers'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[Servers]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[Servers]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'Servers') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[Servers] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'MainPorts'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[MainPorts]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[MainPorts]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'MainPorts') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[MainPorts] ([InfobaseCode] ASC, [Code] ASC);" + vbNewLine +
                     "" +
                     "IF NOT EXISTS (select * from sysobjects where id = object_id(N'SecondPorts'))" + vbNewLine +
-                    "CREATE TABLE [dbo].[SecondPorts]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [char](100));" + vbNewLine +
+                    "CREATE TABLE [dbo].[SecondPorts]([InfobaseCode] int NOT NULL, [Code] int NOT NULL, [Name] [nvarchar](100));" + vbNewLine +
                     "IF NOT EXISTS (select * from sys.indexes where object_id = object_id(N'SecondPorts') AND Name = 'ClusteredIndex')" + vbNewLine +
                     "CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex] ON [dbo].[SecondPorts] ([InfobaseCode] ASC, [Code] ASC);"
 
@@ -297,7 +297,7 @@ Public Class EventLogLoaderService
                     "" +
                     "CREATE TABLE IF NOT EXISTS `Applications`(`InfobaseCode` int(11) NOT NULL, `Code` int(11) NOT NULL, `Name` varchar(100), PRIMARY KEY (`InfobaseCode`, `Code`));" + vbNewLine +
                     "" +
-                    "CREATE TABLE IF NOT EXISTS `EventsType`(`InfobaseCode` int(11) NOT NULL, `Code` int(11) NOT NULL, `Name` varchar(100), PRIMARY KEY (`InfobaseCode`, `Code`));" + vbNewLine +
+                    "CREATE TABLE IF NOT EXISTS `EventsType`(`InfobaseCode` int(11) NOT NULL, `Code` int(11) NOT NULL, `Name` text, PRIMARY KEY (`InfobaseCode`, `Code`));" + vbNewLine +
                     "" +
                     "CREATE TABLE IF NOT EXISTS `Servers`(`InfobaseCode` int(11) NOT NULL, `Code` int(11) NOT NULL, `Name` varchar(100), PRIMARY KEY (`InfobaseCode`, `Code`));" + vbNewLine +
                     "" +

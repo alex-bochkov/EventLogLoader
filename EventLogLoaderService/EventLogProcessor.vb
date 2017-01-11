@@ -56,6 +56,11 @@ Public Class EventLogProcessor
         Usr.Name = Name
         Usr.Guid = Guid
 
+        'reference file in old evenlog format may contain duplicated values when object description has been changed (for example, user renamed)
+        If DictUsers.ContainsKey(Code) Then
+            DictUsers.Remove(Code)
+        End If
+
         DictUsers.Add(Code, Usr)
 
     End Sub
@@ -96,6 +101,11 @@ Public Class EventLogProcessor
         MD.Code = Code
         MD.Name = Name
         MD.Guid = Guid
+
+        'reference file in old evenlog format may contain duplicated values when object description has been changed (for example, user renamed)
+        If DictMetadata.ContainsKey(Code) Then
+            DictMetadata.Remove(Code)
+        End If
 
         DictMetadata.Add(Code, MD)
 
@@ -921,6 +931,8 @@ Public Class EventLogProcessor
         DictMainPorts.Clear()
         DictSecondPorts.Clear()
 
+        Dim LastProcessedObjectForDebug As String = ""
+
         Try
             Dim FileName = Path.Combine(Catalog, "1Cv8.lgf")
 
@@ -940,29 +952,34 @@ Public Class EventLogProcessor
                     SR.Close()
                     FS.Close()
 
+                    Text = Text.Substring(Text.IndexOf("{"))
 
-                    Dim ArrayLines = ParserServices.ParseString(Text)
+                    Dim ObjectTexts = ParserServices.ParseEventlogString("{" + Text + "}")
 
-                    Dim i = 0
-                    For Each a In ArrayLines
+                    For Each TextObject In ObjectTexts
+
+                        LastProcessedObjectForDebug = TextObject
+
+                        Dim a = ParserServices.ParseEventlogString(TextObject)
+
                         If Not a Is Nothing Then
-                            Select Case a(1)
+                            Select Case a(0)
                                 Case "1"
-                                    AddUser(Convert.ToInt32(a(4)), a(2), a(3))
+                                    AddUser(Convert.ToInt32(a(3)), a(1), a(2))
                                 Case "2"
-                                    AddComputer(Convert.ToInt32(a(3)), a(2))
+                                    AddComputer(Convert.ToInt32(a(2)), a(1))
                                 Case "3"
-                                    AddApplication(Convert.ToInt32(a(3)), a(2))
+                                    AddApplication(Convert.ToInt32(a(2)), a(1))
                                 Case "4"
-                                    AddEvent(Convert.ToInt32(a(3)), a(2))
+                                    AddEvent(Convert.ToInt32(a(2)), a(1))
                                 Case "5"
-                                    AddMetadata(Convert.ToInt32(a(4)), a(2), a(3))
+                                    AddMetadata(Convert.ToInt32(a(3)), a(1), a(2))
                                 Case "6"
-                                    AddServer(Convert.ToInt32(a(3)), a(2))
+                                    AddServer(Convert.ToInt32(a(2)), a(1))
                                 Case "7"
-                                    AddMainPort(Convert.ToInt32(a(3)), a(2))
+                                    AddMainPort(Convert.ToInt32(a(2)), a(1))
                                 Case "8"
-                                    AddSecondPort(Convert.ToInt32(a(3)), a(2))
+                                    AddSecondPort(Convert.ToInt32(a(2)), a(1))
                                         'Case "9" - не видел этих в файле
                                         'Case "10"
                                 Case "11"
@@ -974,7 +991,46 @@ Public Class EventLogProcessor
                             End Select
 
                         End If
+
+
+
                     Next
+
+
+                    'Dim ArrayLines = ParserServices.ParseString(Text)
+
+                    'Dim i = 0
+                    'For Each a In ArrayLines
+                    '    If Not a Is Nothing Then
+                    '        Select Case a(1)
+                    '            Case "1"
+                    '                AddUser(Convert.ToInt32(a(4)), a(2), a(3))
+                    '            Case "2"
+                    '                AddComputer(Convert.ToInt32(a(3)), a(2))
+                    '            Case "3"
+                    '                AddApplication(Convert.ToInt32(a(3)), a(2))
+                    '            Case "4"
+                    '                AddEvent(Convert.ToInt32(a(3)), a(2))
+                    '            Case "5"
+                    '                AddMetadata(Convert.ToInt32(a(4)), a(2), a(3))
+                    '            Case "6"
+                    '                AddServer(Convert.ToInt32(a(3)), a(2))
+                    '            Case "7"
+                    '                AddMainPort(Convert.ToInt32(a(3)), a(2))
+                    '            Case "8"
+                    '                AddSecondPort(Convert.ToInt32(a(3)), a(2))
+                    '                    'Case "9" - не видел этих в файле
+                    '                    'Case "10"
+                    '            Case "11"
+                    '            Case "12"
+                    '            Case "13"
+                    '                'в числе последних трех должны быть статус транзакции и важность
+                    '            Case Else
+
+                    '        End Select
+
+                    '    End If
+                    'Next
 
                     SaveReferenceValuesToDatabase()
 
@@ -982,7 +1038,14 @@ Public Class EventLogProcessor
 
             End If
         Catch ex As Exception
-            Log.Error(ex, "Error occurred while working with reference file")
+
+            Dim AdditionalString = ""
+            If Not String.IsNullOrEmpty(LastProcessedObjectForDebug) Then
+                AdditionalString = "Attempted to process this object: " + LastProcessedObjectForDebug
+            End If
+
+            Log.Error(ex, "Error occurred while working with reference file. " + AdditionalString)
+
         End Try
 
 
