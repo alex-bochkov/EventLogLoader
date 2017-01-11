@@ -982,7 +982,7 @@ Public Class EventLogProcessor
 
             End If
         Catch ex As Exception
-            Log.ErrorException("Error occurred while working with reference file", ex)
+            Log.Error(ex, "Error occurred while working with reference file")
         End Try
 
 
@@ -1062,7 +1062,7 @@ Public Class EventLogProcessor
             End If
 
         Catch ex As Exception
-            Log.ErrorException("Error occurred while working with reference tables", ex)
+            Log.Error(ex, "Error occurred while working with reference tables")
         End Try
 
     End Sub
@@ -1122,7 +1122,7 @@ Public Class EventLogProcessor
                                 LoadEvents(File)
                             End If
                         Catch ex As Exception
-                            Log.ErrorException("Error in FindAndStartParseFiles", ex)
+                            Log.Error(ex, "Error in FindAndStartParseFiles")
                         End Try
                     End If
 
@@ -1268,7 +1268,7 @@ Public Class EventLogProcessor
             Conn.Dispose()
 
         Catch ex As Exception
-            Log.ErrorException("Error while working with EventLog table (SQLite)", ex)
+            Log.Error(ex, "Error while working with EventLog table (SQLite)")
         End Try
 
 
@@ -1542,7 +1542,7 @@ Public Class EventLogProcessor
                 FindAndStartParseFiles()
 
             Catch ex As Exception
-                Log.ErrorException("Error occurred during log file processing (" + InfobaseName + ")", ex)
+                Log.Error(ex, "Error occurred during log file processing (" + InfobaseName + ")")
             End Try
 
             Threading.Thread.Sleep(SleepTime)

@@ -73,7 +73,7 @@ Public Class EventLogLoaderService
                 Log.Error("File config.json was not found!")
             End If
         Catch ex As Exception
-            Log.ErrorException("Parameters cannot be load from config.json file (it may be corrupted)", ex)
+            Log.Error(ex, "Parameters cannot be load from config.json file (it may be corrupted)")
         End Try
 
 
@@ -138,7 +138,7 @@ Public Class EventLogLoaderService
             Try
                 IB.GetInfobaseIDFromDatabase()
             Catch ex As Exception
-                Log.ErrorException("Error occurred while getting infobase ID from target database (" + IB.InfobaseName + ")", ex)
+                Log.Error(ex, "Error occurred while getting infobase ID from target database (" + IB.InfobaseName + ")")
                 Continue For
             End Try
 
@@ -153,7 +153,7 @@ Public Class EventLogLoaderService
 
                 i = i + 1
             Catch ex As Exception
-                Log.ErrorException("Error occurred while starting new thread (" + IB.InfobaseName + ")", ex)
+                Log.Error(ex, "Error occurred while starting new thread (" + IB.InfobaseName + ")")
             End Try
 
         Next
@@ -320,7 +320,7 @@ Public Class EventLogLoaderService
 
         Catch ex As Exception
 
-            Log.ErrorException("Error occurred while during target database tables verification", ex)
+            Log.Error(ex, "Error occurred while during target database tables verification")
 
         End Try
 
