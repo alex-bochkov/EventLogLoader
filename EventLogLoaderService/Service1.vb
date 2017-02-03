@@ -179,7 +179,6 @@ Public Class EventLogLoaderService
                                               		    [UserName] int NULL,	
                                               	        [ComputerName] int NULL,	
                                               		    [AppName] Int NULL, 
-                                                        [Field2] [varchar](100) NULL,	
                                                         [EventID] int NULL, 
                                               		    [EventType] [varchar](1) NULL,	
                                                         [Comment] [nvarchar](max) NULL,	
@@ -189,9 +188,7 @@ Public Class EventLogLoaderService
                                                         [ServerID] int NULL, 
                                               		    [MainPortID] int NULL,	
                                                         [SecondPortID] int NULL, 
-                                              		    [Seance] int NULL,	
-                                                        [Field7] [varchar](100) NULL,	
-                                              		    [Field8] [varchar](100) NULL);
+                                              		    [Seance] int NULL);	
                                                     CREATE CLUSTERED INDEX [CIX_Events] ON [dbo].[Events]([InfobaseCode], [DateTime])
                                                 END", objConn)
                 command.ExecuteNonQuery()
@@ -273,10 +270,9 @@ Public Class EventLogLoaderService
                 command.CommandText = "CREATE TABLE IF NOT EXISTS `Events` (`InfobaseCode` int(11) NOT NULL, `DateTime` int(11) NOT NULL," +
                     "`TransactionStatus` varchar(1) NULL, `TransactionStartTime` datetime NULL,	" +
                     "`TransactionMark` bigint NULL, `Transaction` varchar(100) NULL,	`UserName` int(11) NULL, `ComputerName` int(11) NULL,	" +
-                    "`AppName` int(11) NULL, `Field2` varchar(100) NULL,	`EventID` int(11) NULL, `EventType` varchar(1) NULL,	" +
+                    "`AppName` int(11) NULL, `EventID` int(11) NULL, `EventType` varchar(1) NULL,	" +
                     "`Comment` text NULL, `MetadataID` int(11) NULL,	`DataStructure` text NULL, `DataString` text NULL,	" +
-                    "`ServerID` int(11) NULL, `MainPortID` int(11) NULL,	`SecondPortID` int(11) NULL, `Seance` int(11) NULL,	" +
-                    "`Field7` varchar(100) NULL, `Field8` varchar(100) NULL" +
+                    "`ServerID` int(11) NULL, `MainPortID` int(11) NULL,	`SecondPortID` int(11) NULL, `Seance` int(11) NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8;"
                 command.ExecuteNonQuery()
                 '**********************************************************************************
