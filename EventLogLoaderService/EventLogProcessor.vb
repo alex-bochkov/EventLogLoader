@@ -314,8 +314,13 @@ Public Class EventLogProcessor
             Next
 
             '---------------------------------------------------------------------------------------------------------
-            command.CommandText = "IF NOT EXISTS (select * from [dbo].[Metadata] where [Code] = @v1 AND [InfobaseCode] = @v4) " +
-                                    "INSERT INTO [dbo].[Metadata] ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3)"
+            command.CommandText = "MERGE INTO [dbo].[Metadata] AS Target " +
+                                  "USING (select @v1 as [Code], @v4 as [InfobaseCode], @v3 as [Guid]) AS Source " +
+                                  "ON (Target.[Code] = Source.[Code] AND Target.[InfobaseCode] = Source.[InfobaseCode] AND Target.[Guid] = Source.[Guid]) " +
+                                  "WHEN MATCHED THEN " +
+                                  "    UPDATE Set [InfobaseCode] = @v4, [Code] = @v1, [Name] = @v2, [Guid] = @v3 " +
+                                  "When Not MATCHED Then " +
+                                  "    INSERT ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3);"
 
             For Each Item In DictMetadata
                 Try
