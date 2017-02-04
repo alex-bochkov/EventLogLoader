@@ -311,13 +311,16 @@ Public Class EventLogProcessor
             Next
 
             '---------------------------------------------------------------------------------------------------------
-            command.CommandText = "MERGE INTO [dbo].[Metadata] AS Target " +
-                                  "USING (select @v1 as [Code], @v4 as [InfobaseCode], @v3 as [Guid]) AS Source " +
-                                  "ON (Target.[Code] = Source.[Code] AND Target.[InfobaseCode] = Source.[InfobaseCode] AND Target.[Guid] = Source.[Guid]) " +
-                                  "WHEN MATCHED THEN " +
-                                  "    UPDATE Set [InfobaseCode] = @v4, [Code] = @v1, [Name] = @v2, [Guid] = @v3 " +
-                                  "When Not MATCHED Then " +
-                                  "    INSERT ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3);"
+            command.CommandText = "MERGE INTO [dbo].[Metadata] AS Target
+                                    USING (SELECT @v1 AS [Code],
+                                                    @v4 AS [InfobaseCode],
+                                                    @v3 AS [Guid]) AS Source 
+                                    ON (Target.[Code] = Source.[Code]
+	                                    AND Target.[InfobaseCode] = Source.[InfobaseCode]
+	                                    AND Target.[Guid] = Source.[Guid])
+                                    WHEN MATCHED AND NOT ([Name] = @v2) THEN UPDATE 
+                                    SET [Name] = @v2
+                                    WHEN NOT MATCHED THEN INSERT ([InfobaseCode], [Code], [Name], [Guid]) VALUES (@v4, @v1, @v2, @v3);"
 
             For Each Item In DictMetadata
                 Try
@@ -333,8 +336,16 @@ Public Class EventLogProcessor
             Next
 
             '---------------------------------------------------------------------------------------------------------
-            command.CommandText = "IF NOT EXISTS (select * from [dbo].[Users] where [Code] = @v1 AND [InfobaseCode] = @v4) " +
-                                    "INSERT INTO [dbo].[Users] ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3)"
+            command.CommandText = "MERGE INTO [dbo].[Users] AS Target
+                                    USING (SELECT @v1 AS [Code],
+                                                  @v4 AS [InfobaseCode],
+                                                  @v3 AS [Guid]) AS Source 
+                                    ON (Target.[Code] = Source.[Code]
+	                                    AND Target.[InfobaseCode] = Source.[InfobaseCode]
+	                                    AND Target.[Guid] = Source.[Guid])
+                                    WHEN MATCHED AND NOT ([Name] = @v2) THEN UPDATE 
+                                    SET [Name] = @v2
+                                    WHEN NOT MATCHED THEN INSERT ([InfobaseCode], [Code], [Name], [Guid]) VALUES (@v4, @v1, @v2, @v3);"
 
             For Each Item In DictUsers
                 Try
@@ -573,10 +584,14 @@ Public Class EventLogProcessor
 
             If InfobaseID = 0 Then
 
-                command.CommandText = "INSERT INTO Infobases ([Code],[Name],[guid])" +
-                                     " SELECT MAX(f) AS [Code], @v0 as [Name], @v1 as [guid] FROM " +
-                                     " (SELECT MAX(Code) + 1 AS f FROM Infobases UNION ALL" +
-                                     " SELECT 1 AS Expr1) AS T"
+                command.CommandText = "INSERT INTO Infobases ([Code], [Name], [guid])
+                                        SELECT MAX(f) AS [Code],
+                                               @v0 AS [Name],
+                                               @v1 AS [guid]
+                                        FROM (SELECT MAX(Code) + 1 AS f
+                                              FROM Infobases
+                                              UNION ALL
+                                              SELECT 1 AS Expr1) AS T;"
                 command.Parameters.Clear()
                 command.Parameters.Add(New SqlParameter("@v0", SqlDbType.Char)).Value = InfobaseName
                 command.Parameters.Add(New SqlParameter("@v1", SqlDbType.Char)).Value = InfobaseGuid
@@ -988,42 +1003,6 @@ Public Class EventLogProcessor
 
 
                     Next
-
-
-                    'Dim ArrayLines = ParserServices.ParseString(Text)
-
-                    'Dim i = 0
-                    'For Each a In ArrayLines
-                    '    If Not a Is Nothing Then
-                    '        Select Case a(1)
-                    '            Case "1"
-                    '                AddUser(Convert.ToInt32(a(4)), a(2), a(3))
-                    '            Case "2"
-                    '                AddComputer(Convert.ToInt32(a(3)), a(2))
-                    '            Case "3"
-                    '                AddApplication(Convert.ToInt32(a(3)), a(2))
-                    '            Case "4"
-                    '                AddEvent(Convert.ToInt32(a(3)), a(2))
-                    '            Case "5"
-                    '                AddMetadata(Convert.ToInt32(a(4)), a(2), a(3))
-                    '            Case "6"
-                    '                AddServer(Convert.ToInt32(a(3)), a(2))
-                    '            Case "7"
-                    '                AddMainPort(Convert.ToInt32(a(3)), a(2))
-                    '            Case "8"
-                    '                AddSecondPort(Convert.ToInt32(a(3)), a(2))
-                    '                    'Case "9" - не видел этих в файле
-                    '                    'Case "10"
-                    '            Case "11"
-                    '            Case "12"
-                    '            Case "13"
-                    '                'в числе последних трех должны быть статус транзакции и важность
-                    '            Case Else
-
-                    '        End Select
-
-                    '    End If
-                    'Next
 
                     SaveReferenceValuesToDatabase()
 
