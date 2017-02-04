@@ -171,7 +171,6 @@ Public Class EventLogProcessor
         Public UserName As Integer
         Public ComputerName As Integer
         Public AppName As Integer
-        Public Field2 As String
         Public EventID As Integer
         Public EventType As String
         Public Comment As String
@@ -184,8 +183,6 @@ Public Class EventLogProcessor
         Public MainPortID As Integer
         Public SecondPortID As Integer
         Public SessionNumber As Integer
-        Public Field7 As String
-        Public Field8 As String
     End Class
 
     Class ESRecord
@@ -314,8 +311,13 @@ Public Class EventLogProcessor
             Next
 
             '---------------------------------------------------------------------------------------------------------
-            command.CommandText = "IF NOT EXISTS (select * from [dbo].[Metadata] where [Code] = @v1 AND [InfobaseCode] = @v4) " +
-                                    "INSERT INTO [dbo].[Metadata] ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3)"
+            command.CommandText = "MERGE INTO [dbo].[Metadata] AS Target " +
+                                  "USING (select @v1 as [Code], @v4 as [InfobaseCode], @v3 as [Guid]) AS Source " +
+                                  "ON (Target.[Code] = Source.[Code] AND Target.[InfobaseCode] = Source.[InfobaseCode] AND Target.[Guid] = Source.[Guid]) " +
+                                  "WHEN MATCHED THEN " +
+                                  "    UPDATE Set [InfobaseCode] = @v4, [Code] = @v1, [Name] = @v2, [Guid] = @v3 " +
+                                  "When Not MATCHED Then " +
+                                  "    INSERT ([InfobaseCode],[Code],[Name],[Guid]) VALUES(@v4, @v1,@v2,@v3);"
 
             For Each Item In DictMetadata
                 Try
@@ -686,7 +688,7 @@ Public Class EventLogProcessor
             objConn.Open()
 
             Dim dt = New DataTable
-            For jj = 1 To 22
+            For jj = 1 To 19
                 dt.Columns.Add(New DataColumn())
             Next
 
@@ -694,7 +696,7 @@ Public Class EventLogProcessor
 
                 If Ev.AppName = Nothing Then Continue For
 
-                Dim Data(21)
+                Dim Data(18)
 
                 'Select [InfobaseCode]
                 '    ,[DateTime]
@@ -705,7 +707,6 @@ Public Class EventLogProcessor
                 '    ,[UserName]
                 '    ,[ComputerName]
                 '    ,[AppName]
-                '    ,[Field2]
                 '    ,[EventID]
                 '    ,[EventType]
                 '    ,[Comment]
@@ -716,8 +717,6 @@ Public Class EventLogProcessor
                 '    ,[MainPortID]
                 '    ,[SecondPortID]
                 '    ,[Seance]
-                '    ,[Field7]
-                '    ,[Field8]
                 'FROM [EventLog].[dbo].[Events]
 
                 Data(0) = InfobaseID
@@ -729,19 +728,16 @@ Public Class EventLogProcessor
                 Data(6) = Ev.UserName
                 Data(7) = Ev.ComputerName
                 Data(8) = Ev.AppName
-                Data(9) = Ev.Field2
-                Data(10) = Ev.EventID
-                Data(11) = Ev.EventType
-                Data(12) = Ev.Comment
-                Data(13) = Ev.MetadataID
-                Data(14) = Ev.DataStructure
-                Data(15) = Ev.DataString
-                Data(16) = Ev.ServerID
-                Data(17) = Ev.MainPortID
-                Data(18) = Ev.SecondPortID
-                Data(19) = Ev.SessionNumber
-                Data(20) = Ev.Field7
-                Data(21) = Ev.Field8
+                Data(9) = Ev.EventID
+                Data(10) = Ev.EventType
+                Data(11) = Ev.Comment
+                Data(12) = Ev.MetadataID
+                Data(13) = Ev.DataStructure
+                Data(14) = Ev.DataString
+                Data(15) = Ev.ServerID
+                Data(16) = Ev.MainPortID
+                Data(17) = Ev.SecondPortID
+                Data(18) = Ev.SessionNumber
 
                 Dim row As DataRow = dt.NewRow()
                 row.ItemArray = Data
@@ -750,7 +746,7 @@ Public Class EventLogProcessor
             Next
 
             Using copy As New SqlBulkCopy(objConn)
-                For jj = 0 To 21
+                For jj = 0 To 18
                     copy.ColumnMappings.Add(jj, jj)
                 Next
                 copy.DestinationTableName = "Events"
@@ -773,9 +769,9 @@ Public Class EventLogProcessor
             command.ExecuteNonQuery()
 
             command.CommandText = "INSERT INTO `Events` (`InfobaseCode`,`DateTime`,`TransactionStatus`,`Transaction`,`UserName`,`ComputerName`" +
-                                      ",`AppName`,`Field2`,`EventID`,`EventType`,`Comment`,`MetadataID`,`DataStructure`,`DataString`" +
-                                      ",`ServerID`,`MainPortID`,`SecondPortID`,`Seance`,`Field7`,`Field8`,`TransactionStartTime`,`TransactionMark`)" +
-                                      " VALUES(@v0,@v1,@v2,@v3,@v4,@v5,@v6,@v7,@v8,@v9,@v10,@v11,@v12,@v13,@v14,@v15,@v16,@v17,@v18,@v19,@v20,@v21)"
+                                      ",`AppName`,`EventID`,`EventType`,`Comment`,`MetadataID`,`DataStructure`,`DataString`" +
+                                      ",`ServerID`,`MainPortID`,`SecondPortID`,`Seance`,`TransactionStartTime`,`TransactionMark`)" +
+                                      " VALUES(@v0,@v1,@v2,@v3,@v4,@v5,@v6,@v7,@v8,@v9,@v10,@v11,@v12,@v13,@v14,@v15,@v16,@v17,@v18)"
 
             Dim i = 0
             For Each Ev In EventsList
@@ -791,21 +787,18 @@ Public Class EventLogProcessor
                     command.Parameters.Add(New MySqlParameter("@v4", MySqlDbType.Int32)).Value = Ev.UserName
                     command.Parameters.Add(New MySqlParameter("@v5", MySqlDbType.Int32)).Value = Ev.ComputerName
                     command.Parameters.Add(New MySqlParameter("@v6", MySqlDbType.Int32)).Value = Ev.AppName
-                    command.Parameters.Add(New MySqlParameter("@v7", MySqlDbType.VarChar)).Value = Ev.Field2
-                    command.Parameters.Add(New MySqlParameter("@v8", MySqlDbType.Int32)).Value = Ev.EventID
-                    command.Parameters.Add(New MySqlParameter("@v9", MySqlDbType.VarChar)).Value = Ev.EventType
-                    command.Parameters.Add(New MySqlParameter("@v10", MySqlDbType.VarChar)).Value = Ev.Comment
-                    command.Parameters.Add(New MySqlParameter("@v11", MySqlDbType.Int32)).Value = Ev.MetadataID
-                    command.Parameters.Add(New MySqlParameter("@v12", MySqlDbType.VarChar)).Value = Ev.DataStructure
-                    command.Parameters.Add(New MySqlParameter("@v13", MySqlDbType.VarChar)).Value = Ev.DataString
-                    command.Parameters.Add(New MySqlParameter("@v14", MySqlDbType.Int32)).Value = Ev.ServerID
-                    command.Parameters.Add(New MySqlParameter("@v15", MySqlDbType.Int32)).Value = Ev.MainPortID
-                    command.Parameters.Add(New MySqlParameter("@v16", MySqlDbType.Int32)).Value = Ev.SecondPortID
-                    command.Parameters.Add(New MySqlParameter("@v17", MySqlDbType.Int32)).Value = Ev.SessionNumber
-                    command.Parameters.Add(New MySqlParameter("@v18", MySqlDbType.VarChar)).Value = Ev.Field7
-                    command.Parameters.Add(New MySqlParameter("@v19", MySqlDbType.VarChar)).Value = Ev.Field8
-                    command.Parameters.Add(New MySqlParameter("@v20", MySqlDbType.DateTime)).Value = Ev.TransactionStartTime
-                    command.Parameters.Add(New MySqlParameter("@v21", MySqlDbType.Int64)).Value = Ev.TransactionMark
+                    command.Parameters.Add(New MySqlParameter("@v7", MySqlDbType.Int32)).Value = Ev.EventID
+                    command.Parameters.Add(New MySqlParameter("@v8", MySqlDbType.VarChar)).Value = Ev.EventType
+                    command.Parameters.Add(New MySqlParameter("@v9", MySqlDbType.VarChar)).Value = Ev.Comment
+                    command.Parameters.Add(New MySqlParameter("@v10", MySqlDbType.Int32)).Value = Ev.MetadataID
+                    command.Parameters.Add(New MySqlParameter("@v11", MySqlDbType.VarChar)).Value = Ev.DataStructure
+                    command.Parameters.Add(New MySqlParameter("@v12", MySqlDbType.VarChar)).Value = Ev.DataString
+                    command.Parameters.Add(New MySqlParameter("@v13", MySqlDbType.Int32)).Value = Ev.ServerID
+                    command.Parameters.Add(New MySqlParameter("@v14", MySqlDbType.Int32)).Value = Ev.MainPortID
+                    command.Parameters.Add(New MySqlParameter("@v15", MySqlDbType.Int32)).Value = Ev.SecondPortID
+                    command.Parameters.Add(New MySqlParameter("@v16", MySqlDbType.Int32)).Value = Ev.SessionNumber
+                    command.Parameters.Add(New MySqlParameter("@v17", MySqlDbType.DateTime)).Value = Ev.TransactionStartTime
+                    command.Parameters.Add(New MySqlParameter("@v18", MySqlDbType.Int64)).Value = Ev.TransactionMark
 
                     command.ExecuteNonQuery()
                     i += 1
@@ -954,13 +947,13 @@ Public Class EventLogProcessor
 
                     Text = Text.Substring(Text.IndexOf("{"))
 
-                    Dim ObjectTexts = ParserServices.ParseEventlogString("{" + Text + "}")
+                    Dim ObjectTexts = ParserServices.ParseEventLogString("{" + Text + "}")
 
                     For Each TextObject In ObjectTexts
 
                         LastProcessedObjectForDebug = TextObject
 
-                        Dim a = ParserServices.ParseEventlogString(TextObject)
+                        Dim a = ParserServices.ParseEventLogString(TextObject)
 
                         If Not a Is Nothing Then
                             Select Case a(0)
@@ -1294,10 +1287,7 @@ Public Class EventLogProcessor
                     OneEvent.SessionDataSplitCode = rs("sessionDataSplitCode")
 
                     OneEvent.Transaction = ""
-                    OneEvent.Field2 = ""
                     OneEvent.EventType = ""
-                    OneEvent.Field7 = ""
-                    OneEvent.Field8 = ""
 
 
 
@@ -1511,7 +1501,7 @@ Public Class EventLogProcessor
         Dim provider As CultureInfo = CultureInfo.InvariantCulture
         Dim OneEvent As OneEventRecord = New OneEventRecord
 
-        Dim Array = ParserServices.ParseEventlogString(Str)
+        Dim Array = ParserServices.ParseEventLogString(Str)
         OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
         OneEvent.TransactionStatus = Array(1)
 
@@ -1533,7 +1523,6 @@ Public Class EventLogProcessor
         OneEvent.UserName = Convert.ToInt32(Array(3))
         OneEvent.ComputerName = Convert.ToInt32(Array(4))
         OneEvent.AppName = Convert.ToInt32(Array(5))
-        OneEvent.Field2 = Array(6)
         OneEvent.EventID = Convert.ToInt32(Array(7))
         OneEvent.EventType = Array(8)
         OneEvent.Comment = RemoveQuotes(Array(9))
@@ -1544,8 +1533,6 @@ Public Class EventLogProcessor
         OneEvent.MainPortID = Convert.ToInt32(Array(14))
         OneEvent.SecondPortID = Convert.ToInt32(Array(15))
         OneEvent.SessionNumber = Convert.ToInt32(Array(16))
-        OneEvent.Field7 = Array(17)
-        OneEvent.Field8 = Array(18)
 
         '*************************************************************************
         'Additional parsing to make sure that data looks the same between old and new EventLog formats
