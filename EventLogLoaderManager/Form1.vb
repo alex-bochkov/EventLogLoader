@@ -77,6 +77,7 @@ Public Class Form1
         Dim ConfigSetting = New ConfigSetting
         ConfigSetting.ConnectionString = ConnectionStringBox.Text.Trim
         ConfigSetting.DBType = DBType.Text.Trim
+        ConfigSetting.ESIndexName = ESIndexNameTextBox.Text
 
         For Each Item As ListViewItem In ListView.Items
             If Item.Checked Then
