@@ -220,6 +220,8 @@ Public Class EventLogProcessor
     Public ItIsMSSQL As Boolean = False
     Public ItIsMySQL As Boolean = False
     Public ItIsES As Boolean = False
+    Public ESUseSynonymsForFieldsNames As Boolean = False
+    Public ESFieldSynonyms As ElasticSearchFieldSynonymsClass = New ElasticSearchFieldSynonymsClass
     Public SleepTime As Integer = 60 * 1000 '1 минута
 
     Public Log As NLog.Logger
@@ -845,7 +847,8 @@ Public Class EventLogProcessor
             Dim _current = New ElasticClient(_settings)
 
             'Let's create proper array for ES
-            Dim NewRecords As List(Of ESRecord) = New List(Of ESRecord)
+            Dim NewRecords As List(Of Object) = New List(Of Object)
+
             For Each EventRecord In EventsList
                 Dim ESRecord = New ESRecord With {.ServerName = ESServerName, .DatabaseName = InfobaseName}
                 ESRecord.RowID = EventRecord.RowID
@@ -868,7 +871,6 @@ Public Class EventLogProcessor
                 ESRecord.DataStructure = EventRecord.DataStructure
                 ESRecord.DataString = EventRecord.DataString
                 ESRecord.Comment = EventRecord.Comment
-                'ESRecord.EventTypeString = EventRecord.EventType - this is severity
                 ESRecord.SessionDataSplitCode = EventRecord.SessionDataSplitCode
 
 
@@ -912,7 +914,38 @@ Public Class EventLogProcessor
                     ESRecord.UserName = UserNameObj
                 End If
 
-                NewRecords.Add(ESRecord)
+                If ESUseSynonymsForFieldsNames Then
+
+                    Dim ESRecordUserFields = New Dictionary(Of String, Object)
+                    ESRecordUserFields.Add(ESFieldSynonyms.ServerName, ESRecord.ServerName)
+                    ESRecordUserFields.Add(ESFieldSynonyms.DatabaseName, ESRecord.DatabaseName)
+                    ESRecordUserFields.Add(ESFieldSynonyms.RowID, ESRecord.RowID)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Severity, ESRecord.Severity)
+                    ESRecordUserFields.Add(ESFieldSynonyms.DateTime, ESRecord.DateTime)
+                    ESRecordUserFields.Add(ESFieldSynonyms.ConnectID, ESRecord.ConnectID)
+                    ESRecordUserFields.Add(ESFieldSynonyms.DataType, ESRecord.DataType)
+                    ESRecordUserFields.Add(ESFieldSynonyms.SessionNumber, ESRecord.SessionNumber)
+                    ESRecordUserFields.Add(ESFieldSynonyms.DataStructure, ESRecord.DataStructure)
+                    ESRecordUserFields.Add(ESFieldSynonyms.DataString, ESRecord.DataString)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Comment, ESRecord.Comment)
+                    ESRecordUserFields.Add(ESFieldSynonyms.SessionDataSplitCode, ESRecord.SessionDataSplitCode)
+                    ESRecordUserFields.Add(ESFieldSynonyms.EventType, ESRecord.EventType)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Metadata, ESRecord.Metadata)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Computer, ESRecord.Computer)
+                    ESRecordUserFields.Add(ESFieldSynonyms.PrimaryPort, ESRecord.PrimaryPort)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Server, ESRecord.Server)
+                    ESRecordUserFields.Add(ESFieldSynonyms.SecondaryPort, ESRecord.SecondaryPort)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Application, ESRecord.Application)
+                    ESRecordUserFields.Add(ESFieldSynonyms.UserName, ESRecord.UserName)
+
+                    NewRecords.Add(ESRecordUserFields)
+
+                Else
+
+                    NewRecords.Add(ESRecord)
+
+                End If
+
             Next
 
             Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
@@ -924,6 +957,66 @@ Public Class EventLogProcessor
         End If
 
         EventsList.Clear()
+
+    End Sub
+
+    Sub LoadReferenceFromTheTextFile(FileName As String, ByRef LastProcessedObjectForDebug As String)
+
+        Dim FS As FileStream = New FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+        Dim SR As StreamReader = New StreamReader(FS)
+
+        'Dim TextFile = My.Computer.FileSystem.OpenTextFileReader(FileName)
+        'Dim Text = TextFile.ReadToEnd()
+        'TextFile.Close()
+        Dim Text = SR.ReadToEnd()
+        SR.Close()
+        FS.Close()
+
+        Text = Text.Substring(Text.IndexOf("{"))
+
+        Dim ObjectTexts = ParserServices.ParseEventLogString("{" + Text + "}")
+
+        For Each TextObject In ObjectTexts
+
+            LastProcessedObjectForDebug = TextObject
+
+            Dim a = ParserServices.ParseEventLogString(TextObject)
+
+            If Not a Is Nothing Then
+                Select Case a(0)
+                    Case "1"
+                        AddUser(Convert.ToInt32(a(3)), a(1), a(2))
+                    Case "2"
+                        AddComputer(Convert.ToInt32(a(2)), a(1))
+                    Case "3"
+                        AddApplication(Convert.ToInt32(a(2)), a(1))
+                    Case "4"
+                        AddEvent(Convert.ToInt32(a(2)), a(1))
+                    Case "5"
+                        AddMetadata(Convert.ToInt32(a(3)), a(1), a(2))
+                    Case "6"
+                        AddServer(Convert.ToInt32(a(2)), a(1))
+                    Case "7"
+                        AddMainPort(Convert.ToInt32(a(2)), a(1))
+                    Case "8"
+                        AddSecondPort(Convert.ToInt32(a(2)), a(1))
+                                        'Case "9" - не видел этих в файле
+                                        'Case "10"
+                    Case "11"
+                    Case "12"
+                    Case "13"
+                        'в числе последних трех должны быть статус транзакции и важность
+                    Case Else
+
+                End Select
+
+            End If
+
+
+
+        Next
+
+        SaveReferenceValuesToDatabase()
 
     End Sub
 
@@ -939,94 +1032,11 @@ Public Class EventLogProcessor
         DictMainPorts.Clear()
         DictSecondPorts.Clear()
 
-        Dim LastProcessedObjectForDebug As String = ""
+        Dim FileName = Path.Combine(Catalog, "1Cv8.lgd")
 
-        Try
-            Dim FileName = Path.Combine(Catalog, "1Cv8.lgf")
+        If My.Computer.FileSystem.FileExists(FileName) Then
 
-            If My.Computer.FileSystem.FileExists(FileName) Then
-
-                Dim FI = My.Computer.FileSystem.GetFileInfo(FileName)
-
-                If FI.LastWriteTime >= LastReferenceUpdate Then
-
-                    Dim FS As FileStream = New FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-                    Dim SR As StreamReader = New StreamReader(FS)
-
-                    'Dim TextFile = My.Computer.FileSystem.OpenTextFileReader(FileName)
-                    'Dim Text = TextFile.ReadToEnd()
-                    'TextFile.Close()
-                    Dim Text = SR.ReadToEnd()
-                    SR.Close()
-                    FS.Close()
-
-                    Text = Text.Substring(Text.IndexOf("{"))
-
-                    Dim ObjectTexts = ParserServices.ParseEventLogString("{" + Text + "}")
-
-                    For Each TextObject In ObjectTexts
-
-                        LastProcessedObjectForDebug = TextObject
-
-                        Dim a = ParserServices.ParseEventLogString(TextObject)
-
-                        If Not a Is Nothing Then
-                            Select Case a(0)
-                                Case "1"
-                                    AddUser(Convert.ToInt32(a(3)), a(1), a(2))
-                                Case "2"
-                                    AddComputer(Convert.ToInt32(a(2)), a(1))
-                                Case "3"
-                                    AddApplication(Convert.ToInt32(a(2)), a(1))
-                                Case "4"
-                                    AddEvent(Convert.ToInt32(a(2)), a(1))
-                                Case "5"
-                                    AddMetadata(Convert.ToInt32(a(3)), a(1), a(2))
-                                Case "6"
-                                    AddServer(Convert.ToInt32(a(2)), a(1))
-                                Case "7"
-                                    AddMainPort(Convert.ToInt32(a(2)), a(1))
-                                Case "8"
-                                    AddSecondPort(Convert.ToInt32(a(2)), a(1))
-                                        'Case "9" - не видел этих в файле
-                                        'Case "10"
-                                Case "11"
-                                Case "12"
-                                Case "13"
-                                    'в числе последних трех должны быть статус транзакции и важность
-                                Case Else
-
-                            End Select
-
-                        End If
-
-
-
-                    Next
-
-                    SaveReferenceValuesToDatabase()
-
-                End If
-
-            End If
-        Catch ex As Exception
-
-            Dim AdditionalString = ""
-            If Not String.IsNullOrEmpty(LastProcessedObjectForDebug) Then
-                AdditionalString = "Attempted to process this object: " + LastProcessedObjectForDebug
-            End If
-
-            Log.Error(ex, "Error occurred while working with reference file. " + AdditionalString)
-
-        End Try
-
-
-        Try
-
-            Dim FileName = Path.Combine(Catalog, "1Cv8.lgd")
-
-            If My.Computer.FileSystem.FileExists(FileName) Then
-
+            Try
                 Dim Conn = New SQLite.SQLiteConnection("Data Source=" + FileName)
                 Conn.Open()
                 Dim Command = New SQLite.SQLiteCommand
@@ -1093,12 +1103,41 @@ Public Class EventLogProcessor
                 Conn.Dispose()
 
                 SaveReferenceValuesToDatabase()
+            Catch ex As Exception
+                Log.Error(ex, "Error occurred while working with reference tables")
+            End Try
+
+        Else
+
+            Dim LastProcessedObjectForDebug As String = ""
+            FileName = Path.Combine(Catalog, "1Cv8.lgf")
+
+            If My.Computer.FileSystem.FileExists(FileName) Then
+
+                Try
+
+                    Dim FI = My.Computer.FileSystem.GetFileInfo(FileName)
+
+                    If FI.LastWriteTime >= LastReferenceUpdate Then
+
+                        LoadReferenceFromTheTextFile(FileName, LastProcessedObjectForDebug)
+
+                    End If
+
+                Catch ex As Exception
+
+                    Dim AdditionalString = ""
+                    If Not String.IsNullOrEmpty(LastProcessedObjectForDebug) Then
+                        AdditionalString = "Attempted to process this object: " + LastProcessedObjectForDebug
+                    End If
+
+                    Log.Error(ex, "Error occurred while working with reference file. " + AdditionalString)
+
+                End Try
 
             End If
 
-        Catch ex As Exception
-            Log.Error(ex, "Error occurred while working with reference tables")
-        End Try
+        End If
 
     End Sub
 

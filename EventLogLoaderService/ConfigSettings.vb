@@ -10,14 +10,40 @@ Public Module ConfigSettingsModule
         Public Found As Boolean = False
     End Class
 
+    Class ElasticSearchFieldSynonymsClass
+        Public ServerName As String
+        Public DatabaseName As String
+        Public RowID As String
+        Public Severity As String
+        Public DateTime As String
+        Public ConnectID As String
+        Public DataType As String
+        Public SessionNumber As String
+        Public DataStructure As String
+        Public DataString As String
+        Public Comment As String
+        Public SessionDataSplitCode As String
+        Public EventType As String
+        Public Metadata As String
+        Public Computer As String
+        Public PrimaryPort As String
+        Public Server As String
+        Public SecondaryPort As String
+        Public Application As String
+        Public UserName As String
+    End Class
+
     Class ConfigSetting
         Public ConnectionString As String = ""
         Public DBType As String = ""
         Public RepeatTime As Integer = 0
         Public ESIndexName As String = ""
+        Public ESUseSynonymsForFieldsNames As Boolean = False
+        Public ESFieldSynonyms As ElasticSearchFieldSynonymsClass
         Public Infobases As List(Of InfobaseSetting)
         Sub New()
             Infobases = New List(Of InfobaseSetting)
+            ESFieldSynonyms = New ElasticSearchFieldSynonymsClass
         End Sub
     End Class
 

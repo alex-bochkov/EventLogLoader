@@ -33,10 +33,73 @@ Public Class Form1
             End If
         End If
 
+        'Check synonyms list
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Application) Then
+            ConfigSetting.ESFieldSynonyms.Application = "Приложение"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Comment) Then
+            ConfigSetting.ESFieldSynonyms.Comment = "Комментарий"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Computer) Then
+            ConfigSetting.ESFieldSynonyms.Computer = "Компьютер"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.ConnectID) Then
+            ConfigSetting.ESFieldSynonyms.ConnectID = "НомерСоединения"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.DatabaseName) Then
+            ConfigSetting.ESFieldSynonyms.DatabaseName = "ИнформационнаяБаза"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.DataString) Then
+            ConfigSetting.ESFieldSynonyms.DataString = "ПредставлениеДанных"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.DataStructure) Then
+            ConfigSetting.ESFieldSynonyms.DataStructure = "СтруктураДанных"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.DataType) Then
+            ConfigSetting.ESFieldSynonyms.DataType = "ТипДанных"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.DateTime) Then
+            ConfigSetting.ESFieldSynonyms.DateTime = "ДатаВремя"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.EventType) Then
+            ConfigSetting.ESFieldSynonyms.EventType = "ТипСобытия"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Metadata) Then
+            ConfigSetting.ESFieldSynonyms.Metadata = "Метаданные"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.PrimaryPort) Then
+            ConfigSetting.ESFieldSynonyms.PrimaryPort = "ОсновнойПорт"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.RowID) Then
+            ConfigSetting.ESFieldSynonyms.RowID = "НомерСтроки"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.SecondaryPort) Then
+            ConfigSetting.ESFieldSynonyms.SecondaryPort = "ВторичныйПорт"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Server) Then
+            ConfigSetting.ESFieldSynonyms.Server = "СерверПриложений"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.ServerName) Then
+            ConfigSetting.ESFieldSynonyms.ServerName = "Сервер1С"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.SessionDataSplitCode) Then
+            ConfigSetting.ESFieldSynonyms.SessionDataSplitCode = "Разделитель"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.SessionNumber) Then
+            ConfigSetting.ESFieldSynonyms.SessionNumber = "НомерСессии"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Severity) Then
+            ConfigSetting.ESFieldSynonyms.Severity = "УровеньСобытия"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.UserName) Then
+            ConfigSetting.ESFieldSynonyms.UserName = "ИмяПользователя"
+        End If
+
         ConnectionStringBox.Text = ConfigSetting.ConnectionString
         DBType.Text = ConfigSetting.DBType
         RepeatTime.Text = ConfigSetting.RepeatTime.ToString
         ESIndexNameTextBox.Text = ConfigSetting.ESIndexName
+        UseSynonymsForFieldsNamesCheckBox.Checked = ConfigSetting.ESUseSynonymsForFieldsNames
 
     End Sub
 
@@ -74,10 +137,10 @@ Public Class Form1
 
     Private Sub Button1_Click(sender As System.Object, e As System.EventArgs) Handles Button1.Click
 
-        Dim ConfigSetting = New ConfigSetting
-        ConfigSetting.ConnectionString = ConnectionStringBox.Text.Trim
-        ConfigSetting.DBType = DBType.Text.Trim
-        ConfigSetting.ESIndexName = ESIndexNameTextBox.Text
+        Dim NewConfigSetting = New ConfigSetting
+        NewConfigSetting.ConnectionString = ConnectionStringBox.Text.Trim
+        NewConfigSetting.DBType = DBType.Text.Trim
+        NewConfigSetting.ESIndexName = ESIndexNameTextBox.Text
 
         For Each Item As ListViewItem In ListView.Items
             If Item.Checked Then
@@ -88,16 +151,18 @@ Public Class Form1
                 IBSetting.DatabaseCatalog = Item.SubItems(4).Text
                 IBSetting.ESServerName = Item.SubItems(5).Text
 
-                ConfigSetting.Infobases.Add(IBSetting)
+                NewConfigSetting.Infobases.Add(IBSetting)
 
             End If
         Next
 
+        NewConfigSetting.ESUseSynonymsForFieldsNames = UseSynonymsForFieldsNamesCheckBox.Checked
+        NewConfigSetting.ESFieldSynonyms = ConfigSetting.ESFieldSynonyms
 
         Dim Rep = Convert.ToInt32(RepeatTime.Text)
 
-        ConfigSetting.RepeatTime = IIf(Rep = 0, 60, Rep)
-        ConfigSettingsModule.SaveConfigSettingToFile(ConfigSetting, PathConfigFile)
+        NewConfigSetting.RepeatTime = IIf(Rep = 0, 60, Rep)
+        ConfigSettingsModule.SaveConfigSettingToFile(NewConfigSetting, PathConfigFile)
 
 
         Dim sc = New System.ServiceProcess.ServiceController("EventLog loader service")
@@ -470,8 +535,6 @@ Public Class Form1
 
     End Sub
 
-
-
     Private Sub LinkLabel2_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel2.LinkClicked
         Process.Start("https://github.com/alekseybochkov/")
     End Sub
@@ -483,4 +546,5 @@ Public Class Form1
     Private Sub LinkLabel3_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel3.LinkClicked
         Process.Start("https://github.com/alekseybochkov/EventLogLoader/")
     End Sub
+
 End Class

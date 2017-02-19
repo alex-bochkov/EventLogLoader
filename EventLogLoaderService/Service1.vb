@@ -63,6 +63,8 @@ Public Class EventLogLoaderService
                     EventLogProcessorObj.ItIsES = ItIsES
                     EventLogProcessorObj.ESIndexName = ConfigSettingObj.ESIndexName
                     EventLogProcessorObj.ESServerName = IBConfig.ESServerName
+                    EventLogProcessorObj.ESUseSynonymsForFieldsNames = ConfigSettingObj.ESUseSynonymsForFieldsNames
+                    EventLogProcessorObj.ESFieldSynonyms = ConfigSettingObj.ESFieldSynonyms
 
                     ListOfProcessors.Add(EventLogProcessorObj)
 

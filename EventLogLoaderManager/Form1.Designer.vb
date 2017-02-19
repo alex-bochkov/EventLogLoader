@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class Form1
     Inherits System.Windows.Forms.Form
 
     'Форма переопределяет dispose для очистки списка компонентов.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class Form1
     'Примечание: следующая процедура является обязательной для конструктора форм Windows Forms
     'Для ее изменения используйте конструктор форм Windows Form.  
     'Не изменяйте ее в редакторе исходного кода.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
         Me.ListView = New System.Windows.Forms.ListView()
@@ -49,6 +49,8 @@ Partial Class Form1
         Me.LinkLabel1 = New System.Windows.Forms.LinkLabel()
         Me.LinkLabel3 = New System.Windows.Forms.LinkLabel()
         Me.Label5 = New System.Windows.Forms.Label()
+        Me.UseSynonymsForFieldsNamesCheckBox = New System.Windows.Forms.CheckBox()
+        Me.Label6 = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -61,7 +63,7 @@ Partial Class Form1
         Me.ListView.GridLines = True
         Me.ListView.Location = New System.Drawing.Point(3, 20)
         Me.ListView.Name = "ListView"
-        Me.ListView.Size = New System.Drawing.Size(744, 327)
+        Me.ListView.Size = New System.Drawing.Size(746, 327)
         Me.ListView.TabIndex = 1
         Me.ListView.UseCompatibleStateImageBehavior = False
         Me.ListView.View = System.Windows.Forms.View.Details
@@ -107,7 +109,7 @@ Partial Class Form1
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.ConnectionStringBox.Location = New System.Drawing.Point(123, 24)
         Me.ConnectionStringBox.Name = "ConnectionStringBox"
-        Me.ConnectionStringBox.Size = New System.Drawing.Size(525, 20)
+        Me.ConnectionStringBox.Size = New System.Drawing.Size(527, 20)
         Me.ConnectionStringBox.TabIndex = 2
         '
         'Label1
@@ -124,7 +126,7 @@ Partial Class Form1
         'Button4
         '
         Me.Button4.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Button4.Location = New System.Drawing.Point(654, 24)
+        Me.Button4.Location = New System.Drawing.Point(656, 24)
         Me.Button4.Name = "Button4"
         Me.Button4.Size = New System.Drawing.Size(75, 23)
         Me.Button4.TabIndex = 4
@@ -148,7 +150,7 @@ Partial Class Form1
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.ESIndexNameTextBox.Location = New System.Drawing.Point(449, 74)
         Me.ESIndexNameTextBox.Name = "ESIndexNameTextBox"
-        Me.ESIndexNameTextBox.Size = New System.Drawing.Size(199, 20)
+        Me.ESIndexNameTextBox.Size = New System.Drawing.Size(156, 20)
         Me.ESIndexNameTextBox.TabIndex = 9
         '
         'DBType
@@ -183,7 +185,7 @@ Partial Class Form1
         Me.GroupBox1.ForeColor = System.Drawing.Color.Maroon
         Me.GroupBox1.Location = New System.Drawing.Point(4, 100)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(750, 350)
+        Me.GroupBox1.Size = New System.Drawing.Size(752, 350)
         Me.GroupBox1.TabIndex = 5
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "Обнаруженные информационные базы 1С"
@@ -257,7 +259,7 @@ Partial Class Form1
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.RepeatTime.Location = New System.Drawing.Point(449, 49)
         Me.RepeatTime.Name = "RepeatTime"
-        Me.RepeatTime.Size = New System.Drawing.Size(199, 20)
+        Me.RepeatTime.Size = New System.Drawing.Size(156, 20)
         Me.RepeatTime.TabIndex = 2
         '
         'Label4
@@ -274,7 +276,7 @@ Partial Class Form1
         '
         Me.LinkLabel2.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.LinkLabel2.AutoSize = True
-        Me.LinkLabel2.Location = New System.Drawing.Point(660, 530)
+        Me.LinkLabel2.Location = New System.Drawing.Point(662, 530)
         Me.LinkLabel2.Name = "LinkLabel2"
         Me.LinkLabel2.Size = New System.Drawing.Size(102, 13)
         Me.LinkLabel2.TabIndex = 20
@@ -313,11 +315,30 @@ Partial Class Form1
         Me.Label5.TabIndex = 22
         Me.Label5.Text = "Исходные коды (по GPL лицензии):"
         '
+        'UseSynonymsForFieldsNamesCheckBox
+        '
+        Me.UseSynonymsForFieldsNamesCheckBox.AutoSize = True
+        Me.UseSynonymsForFieldsNamesCheckBox.Location = New System.Drawing.Point(611, 77)
+        Me.UseSynonymsForFieldsNamesCheckBox.Name = "UseSynonymsForFieldsNamesCheckBox"
+        Me.UseSynonymsForFieldsNamesCheckBox.Size = New System.Drawing.Size(15, 14)
+        Me.UseSynonymsForFieldsNamesCheckBox.TabIndex = 23
+        Me.UseSynonymsForFieldsNamesCheckBox.UseVisualStyleBackColor = True
+        '
+        'Label6
+        '
+        Me.Label6.Location = New System.Drawing.Point(632, 72)
+        Me.Label6.Name = "Label6"
+        Me.Label6.Size = New System.Drawing.Size(117, 27)
+        Me.Label6.TabIndex = 24
+        Me.Label6.Text = "Использовать свои имена полей"
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(766, 547)
+        Me.ClientSize = New System.Drawing.Size(768, 547)
+        Me.Controls.Add(Me.Label6)
+        Me.Controls.Add(Me.UseSynonymsForFieldsNamesCheckBox)
         Me.Controls.Add(Me.Label5)
         Me.Controls.Add(Me.Label4)
         Me.Controls.Add(Me.LinkLabel2)
@@ -372,4 +393,6 @@ Partial Class Form1
     Friend WithEvents LinkLabel1 As LinkLabel
     Friend WithEvents LinkLabel3 As LinkLabel
     Friend WithEvents Label5 As Label
+    Friend WithEvents UseSynonymsForFieldsNamesCheckBox As CheckBox
+    Friend WithEvents Label6 As Label
 End Class
