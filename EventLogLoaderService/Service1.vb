@@ -66,6 +66,13 @@ Public Class EventLogLoaderService
                     EventLogProcessorObj.ESUseSynonymsForFieldsNames = ConfigSettingObj.ESUseSynonymsForFieldsNames
                     EventLogProcessorObj.ESFieldSynonyms = ConfigSettingObj.ESFieldSynonyms
 
+                    Try
+                        EventLogProcessorObj.LoadEventsStartingAt = Date.Parse(IBConfig.StartDate)
+                    Catch ex As Exception
+                        EventLogProcessorObj.LoadEventsStartingAt = New Date(1900, 1, 1)
+                    End Try
+
+
                     ListOfProcessors.Add(EventLogProcessorObj)
 
                 Next

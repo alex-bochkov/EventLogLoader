@@ -51,13 +51,14 @@ Partial Class Form1
         Me.Label5 = New System.Windows.Forms.Label()
         Me.UseSynonymsForFieldsNamesCheckBox = New System.Windows.Forms.CheckBox()
         Me.Label6 = New System.Windows.Forms.Label()
+        Me.StartAt = CType(New System.Windows.Forms.ColumnHeader(), System.Windows.Forms.ColumnHeader)
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
         'ListView
         '
         Me.ListView.CheckBoxes = True
-        Me.ListView.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.InfobaseName, Me.InfobaseGUID, Me.InfobaseDescription, Me.IBEvLogSize, Me.InfobaseLogPath, Me.ESServerName})
+        Me.ListView.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.InfobaseName, Me.InfobaseGUID, Me.InfobaseDescription, Me.IBEvLogSize, Me.InfobaseLogPath, Me.ESServerName, Me.StartAt})
         Me.ListView.Dock = System.Windows.Forms.DockStyle.Fill
         Me.ListView.FullRowSelect = True
         Me.ListView.GridLines = True
@@ -332,6 +333,11 @@ Partial Class Form1
         Me.Label6.TabIndex = 24
         Me.Label6.Text = "Использовать свои имена полей"
         '
+        'StartAt
+        '
+        Me.StartAt.Text = "Начальная дата"
+        Me.StartAt.Width = 150
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -395,4 +401,5 @@ Partial Class Form1
     Friend WithEvents Label5 As Label
     Friend WithEvents UseSynonymsForFieldsNamesCheckBox As CheckBox
     Friend WithEvents Label6 As Label
+    Friend WithEvents StartAt As ColumnHeader
 End Class

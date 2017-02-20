@@ -150,6 +150,7 @@ Public Class Form1
                 IBSetting.DatabaseName = Item.SubItems(0).Text
                 IBSetting.DatabaseCatalog = Item.SubItems(4).Text
                 IBSetting.ESServerName = Item.SubItems(5).Text
+                IBSetting.StartDate = Item.SubItems(6).Text
 
                 NewConfigSetting.Infobases.Add(IBSetting)
 
@@ -228,7 +229,7 @@ Public Class Form1
 
     Private Sub Form1_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
 
-        Text = My.Application.Info.ProductName + " / " + My.Application.Info.Copyright
+        Text = My.Application.Info.ProductName
 
         LoadConfigSetting()
 
@@ -278,6 +279,7 @@ Public Class Form1
                     item1.SubItems.Add(a.SizeEventLog.ToString)
                     item1.SubItems.Add(a.CatalogEventLog)
                     item1.SubItems.Add(SavedIB.ESServerName) 'ESServerName
+                    item1.SubItems.Add(SavedIB.StartDate) 'StartAt
 
                     ListView.Items.Add(item1)
 
@@ -302,6 +304,7 @@ Public Class Form1
                 item1.SubItems.Add(a.SizeEventLog.ToString)
                 item1.SubItems.Add(a.CatalogEventLog)
                 item1.SubItems.Add(SavedIB.ESServerName) 'ESServerName
+                item1.SubItems.Add(SavedIB.StartDate) 'StartAt
 
                 ListView.Items.Add(item1)
 
@@ -321,6 +324,7 @@ Public Class Form1
                 item1.SubItems.Add(CalcullateFolderSize(IB.DatabaseCatalog))
                 item1.SubItems.Add(IB.DatabaseCatalog)
                 item1.SubItems.Add(IB.ESServerName)
+                item1.SubItems.Add(IB.StartDate) 'StartAt
 
                 ListView.Items.Add(item1)
             End If
@@ -489,6 +493,11 @@ Public Class Form1
             item1.SubItems.Add(CalcullateFolderSize(AddPath.Path.Text))
             item1.SubItems.Add(AddPath.Path.Text)
             item1.SubItems.Add(AddPath.ESServerNameTextBox.Text)
+            If AddPath.UseFilterByDateCheckBox.Checked Then
+                item1.SubItems.Add(AddPath.FilterByDateDateTimePicker.Value.ToString("yyyy-MM-dd"))
+            Else
+                item1.SubItems.Add("")
+            End If
 
             ListView.Items.Add(item1)
 
@@ -511,6 +520,15 @@ Public Class Form1
         AddPath.ESServerNameTextBox.Text = item.SubItems(5).Text
         AddPath.Description.Text = item.SubItems(2).Text
         AddPath.Path.Text = item.SubItems(4).Text
+
+        Dim DateStr = item.SubItems(6).Text
+        If String.IsNullOrEmpty(DateStr) Then
+            AddPath.UseFilterByDateCheckBox.Checked = False
+        Else
+            AddPath.UseFilterByDateCheckBox.Checked = True
+            AddPath.FilterByDateDateTimePicker.Value = DateTime.Parse(DateStr)
+        End If
+
         AddPath.ExistedRow = True
         AddPath.ShowDialog()
 
@@ -524,14 +542,13 @@ Public Class Form1
             item.SubItems.Add(CalcullateFolderSize(AddPath.Path.Text))
             item.SubItems.Add(AddPath.Path.Text)
             item.SubItems.Add(AddPath.ESServerNameTextBox.Text)
+            If AddPath.UseFilterByDateCheckBox.Checked Then
+                item.SubItems.Add(AddPath.FilterByDateDateTimePicker.Value.ToString("yyyy-MM-dd"))
+            Else
+                item.SubItems.Add("")
+            End If
 
         End If
-
-
-
-        'End If
-
-
 
     End Sub
 

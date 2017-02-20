@@ -221,6 +221,7 @@ Public Class EventLogProcessor
     Public ItIsMySQL As Boolean = False
     Public ItIsES As Boolean = False
     Public ESUseSynonymsForFieldsNames As Boolean = False
+    Public LoadEventsStartingAt As Date
     Public ESFieldSynonyms As ElasticSearchFieldSynonymsClass = New ElasticSearchFieldSynonymsClass
     Public SleepTime As Integer = 60 * 1000 '1 минута
 
@@ -1238,7 +1239,7 @@ Public Class EventLogProcessor
                                             [eventCode],
                                             [comment],
                                             [metadataCodes],
-                                            [sessionDataSplitCode],--
+                                            [sessionDataSplitCode],
                                             [dataType],
                                             [data],
                                             [dataPresentation],
@@ -1246,11 +1247,15 @@ Public Class EventLogProcessor
                                             [primaryPortCode],
                                             [secondaryPortCode]
                                         FROM [EventLog] 
-                                        WHERE [rowID] > @LastEventNumber83 
+                                        WHERE [rowID] > @LastEventNumber83 AND [date] >= @MinimumDate
                                         ORDER BY 1
                                         LIMIT 1000"
 
                 Command.Parameters.AddWithValue("LastEventNumber83", LastEventNumber83)
+
+                Dim noOfSeconds As Int64 = (LoadEventsStartingAt - New Date).TotalSeconds
+                Command.Parameters.AddWithValue("MinimumDate", noOfSeconds * 10000)
+
                 Dim rs = Command.ExecuteReader
 
                 Dim HasData = rs.HasRows
@@ -1307,31 +1312,23 @@ Public Class EventLogProcessor
                     OneEvent.Transaction = ""
                     OneEvent.EventType = ""
 
-
-
                     EventsList.Add(OneEvent)
-
-                    If EventsList.Count >= 1000 Then
-                        'Console.WriteLine("Выгрузка 1000 событий: " + Now.ToString)
-                        SaveEventsToSQL()
-                    End If
 
                     LastEventNumber83 = OneEvent.RowID
 
                 End While
 
-
                 rs.Close()
 
-                SaveEventsToSQL()
+                If EventsList.Count > 0 Then
+                    SaveEventsToSQL()
+                End If
 
                 If Not HasData Then
                     Exit While
                 End If
 
             End While
-
-
 
 
             Command.Dispose()
@@ -1522,6 +1519,10 @@ Public Class EventLogProcessor
         Dim Array = ParserServices.ParseEventLogString(Str)
         OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
         OneEvent.TransactionStatus = Array(1)
+
+        If OneEvent.DateTime < LoadEventsStartingAt Then
+            Exit Sub
+        End If
 
         Dim TransStr = Array(2).ToString.Replace("}", "").Replace("{", "")
         Dim TransDate = From16To10(TransStr.Substring(0, TransStr.IndexOf(",")))

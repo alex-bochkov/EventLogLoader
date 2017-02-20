@@ -36,6 +36,9 @@ Partial Class AddPath
         Me.ButtonChoosePath = New System.Windows.Forms.Button()
         Me.Label5 = New System.Windows.Forms.Label()
         Me.ESServerNameTextBox = New System.Windows.Forms.TextBox()
+        Me.FilterByDateDateTimePicker = New System.Windows.Forms.DateTimePicker()
+        Me.Label6 = New System.Windows.Forms.Label()
+        Me.UseFilterByDateCheckBox = New System.Windows.Forms.CheckBox()
         Me.SuspendLayout()
         '
         'IBName
@@ -114,7 +117,7 @@ Partial Class AddPath
         'Button1
         '
         Me.Button1.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(204, Byte))
-        Me.Button1.Location = New System.Drawing.Point(12, 141)
+        Me.Button1.Location = New System.Drawing.Point(9, 195)
         Me.Button1.Name = "Button1"
         Me.Button1.Size = New System.Drawing.Size(200, 43)
         Me.Button1.TabIndex = 2
@@ -124,7 +127,7 @@ Partial Class AddPath
         'Button2
         '
         Me.Button2.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(204, Byte))
-        Me.Button2.Location = New System.Drawing.Point(218, 141)
+        Me.Button2.Location = New System.Drawing.Point(215, 195)
         Me.Button2.Name = "Button2"
         Me.Button2.Size = New System.Drawing.Size(200, 43)
         Me.Button2.TabIndex = 2
@@ -163,11 +166,40 @@ Partial Class AddPath
         Me.ESServerNameTextBox.Size = New System.Drawing.Size(268, 20)
         Me.ESServerNameTextBox.TabIndex = 4
         '
+        'FilterByDateDateTimePicker
+        '
+        Me.FilterByDateDateTimePicker.Location = New System.Drawing.Point(213, 166)
+        Me.FilterByDateDateTimePicker.Name = "FilterByDateDateTimePicker"
+        Me.FilterByDateDateTimePicker.Size = New System.Drawing.Size(200, 20)
+        Me.FilterByDateDateTimePicker.TabIndex = 6
+        '
+        'Label6
+        '
+        Me.Label6.AutoSize = True
+        Me.Label6.Location = New System.Drawing.Point(12, 144)
+        Me.Label6.Name = "Label6"
+        Me.Label6.Size = New System.Drawing.Size(88, 13)
+        Me.Label6.TabIndex = 7
+        Me.Label6.Text = "Начальная дата"
+        '
+        'UseFilterByDateCheckBox
+        '
+        Me.UseFilterByDateCheckBox.AutoSize = True
+        Me.UseFilterByDateCheckBox.Location = New System.Drawing.Point(145, 144)
+        Me.UseFilterByDateCheckBox.Name = "UseFilterByDateCheckBox"
+        Me.UseFilterByDateCheckBox.Size = New System.Drawing.Size(263, 17)
+        Me.UseFilterByDateCheckBox.TabIndex = 8
+        Me.UseFilterByDateCheckBox.Text = "Загружать события начиная с указанной даты"
+        Me.UseFilterByDateCheckBox.UseVisualStyleBackColor = True
+        '
         'AddPath
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(425, 188)
+        Me.ClientSize = New System.Drawing.Size(425, 244)
+        Me.Controls.Add(Me.UseFilterByDateCheckBox)
+        Me.Controls.Add(Me.Label6)
+        Me.Controls.Add(Me.FilterByDateDateTimePicker)
         Me.Controls.Add(Me.Label5)
         Me.Controls.Add(Me.ESServerNameTextBox)
         Me.Controls.Add(Me.ButtonChoosePath)
@@ -202,4 +234,7 @@ Partial Class AddPath
     Friend WithEvents ButtonChoosePath As System.Windows.Forms.Button
     Friend WithEvents Label5 As Label
     Friend WithEvents ESServerNameTextBox As TextBox
+    Friend WithEvents FilterByDateDateTimePicker As DateTimePicker
+    Friend WithEvents Label6 As Label
+    Friend WithEvents UseFilterByDateCheckBox As CheckBox
 End Class

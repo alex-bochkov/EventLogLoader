@@ -7,6 +7,7 @@ Public Module ConfigSettingsModule
         Public DatabaseID As String = ""
         Public DatabaseName As String = ""
         Public DatabaseCatalog As String = ""
+        Public StartDate As String = ""
         Public Found As Boolean = False
     End Class
 
