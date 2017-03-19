@@ -873,7 +873,7 @@ Public Class EventLogProcessor
                         ESRecord.Severity = "Note"
                 End Select
 
-                ESRecord.DateTime = EventRecord.DateTime
+                ESRecord.DateTime = EventRecord.DateTime.ToUniversalTime()
                 ESRecord.ConnectID = EventRecord.ConnectID
                 ESRecord.DataType = EventRecord.DataType
                 ESRecord.SessionNumber = EventRecord.SessionNumber
