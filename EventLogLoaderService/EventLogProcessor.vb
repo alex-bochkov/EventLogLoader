@@ -1200,7 +1200,45 @@ Public Class EventLogProcessor
 
                 System.Array.Sort(ArrayFiles)
 
+                ' В случае с файловым журналом отсечём те файлы, которые заведомо не будут загружаться
+
+                Dim ArrayFilesToProcess(0) As String
+                Dim FileCount = 0
+
+                System.Array.Reverse(ArrayFiles)
                 For Each File In ArrayFiles
+
+                    Dim FI = My.Computer.FileSystem.GetFileInfo(File)
+                    Dim DateTimePart = FI.Name.Substring(0, "yyyyMMddHHmmss".Length)
+                    Dim Last = False
+
+                    Try
+
+                        Dim FileStartDateTime = Date.ParseExact(DateTimePart, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+                        If FileStartDateTime <= LoadEventsStartingAt
+
+                            ' Берём только один файл из тех, чья дата начала меньше даты отбора.
+                            ' Все файлы младше заведомо не содержат данных, подходящих под отбор по дате
+                            Last = True
+
+                        End If
+
+                    Catch
+                    End Try
+
+                    ReDim Preserve ArrayFilesToProcess (FileCount)
+                    ArrayFilesToProcess(FileCount) = File
+                    FileCount += 1
+
+                    If Last
+                        Exit For
+                    End If
+
+                Next
+
+                System.Array.Reverse(ArrayFilesToProcess)
+
+                For Each File In ArrayFilesToProcess
                     If Not File Is Nothing Then
                         Try
                             Dim FI = My.Computer.FileSystem.GetFileInfo(File)
