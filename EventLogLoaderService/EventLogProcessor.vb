@@ -768,7 +768,15 @@ Public Class EventLogProcessor
                     copy.ColumnMappings.Add(jj, jj)
                 Next
                 copy.DestinationTableName = "Events"
-                copy.WriteToServer(dt)
+                Try
+                    copy.WriteToServer(dt)
+                Catch ex As InvalidOperationException
+                    Log.Error("Ошибка сохранения в БД записи по ИБ " + InfobaseName + " : " + ex.Message)
+                Catch ex As Exception
+                    Log.Error("Ошибка сохранения в БД записи по ИБ " + InfobaseName + " : " + ex.Message)
+                End Try
+                'InvalidOperationException
+
             End Using
 
             SaveReadParametersToFile()
@@ -1406,11 +1414,11 @@ Public Class EventLogProcessor
 
             If ItsEndOfEvent(TextLine, CountBracket, TextBlockOpen) Then
                 NewLine = True
-                If Not StrEvent Is Nothing Then
+                If Not StrEvent Is Nothing And (StrEvent.Length > 1) Then
                     Try
                         AddEvent(StrEvent)
                     Catch ex As Exception
-
+                        Log.Error(ex.Message)
                     End Try
 
                     '***
@@ -1447,7 +1455,7 @@ Public Class EventLogProcessor
             End If
         Next
 
-        ItsEndOfEvent = (Count = 0)
+        ItsEndOfEvent = (Count = 0) And Not TextBlockOpen
 
     End Function
 

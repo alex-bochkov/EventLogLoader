@@ -4,36 +4,53 @@
 
         Dim ArrayLines(0)
 
+        If Text Is Nothing Or Text.Length = 0 Then
+            Return ArrayLines
+        End If
+
+        ' Сим отсекаем скобочки
         Dim Text2 = Text.Substring(1, IIf(Text.EndsWith(","), Text.Length - 3, Text.Length - 2)) + ","
 
-        Dim Str = ""
-
-        Dim Delim = Text2.IndexOf(",")
         Dim i = 0
+        Dim Str = ""
+        Dim TextBlockOpen = False
+        Dim count = 0
+        Dim BracketCount = 0
 
-        While Delim > 0
-            Str = Str + Text2.Substring(0, Delim).Trim
-            Text2 = Text2.Substring(Delim + 1)
+        For i = 0 To Text2.Length - 1
 
-            If CountSubstringInString(Str, "{") = CountSubstringInString(Str, "}") _
-                And Math.IEEERemainder(CountSubstringInString(Str, """"), 2) = 0 Then
+            Dim simb = Text2.Substring(i, 1)
 
-                ReDim Preserve ArrayLines(i)
+            If (simb = ",") And Not TextBlockOpen And (BracketCount = 0) Then
 
-                If Str.StartsWith("""") And Str.EndsWith("""") Then
-                    Str = Str.Substring(1, Str.Length - 2)
-                End If
+                ReDim Preserve ArrayLines(count)
+                ArrayLines(count) = Str
+                count = count + 1
 
-                ArrayLines(i) = Str
-                i = i + 1
                 Str = ""
+
+            Else If simb = "{" And Not TextBlockOpen Then
+
+                BracketCount = BracketCount + 1
+                Str = Str + simb
+
+            Else If simb = "}" And Not TextBlockOpen Then
+
+                BracketCount = BracketCount - 1
+                Str = Str + simb
+
+            Else If simb = """" Then
+
+                TextBlockOpen = Not TextBlockOpen
+                Str = Str + """"
+
             Else
-                Str = Str + ","
+
+                Str = Str + simb
+
             End If
 
-            Delim = Text2.IndexOf(",")
-
-        End While
+        Next
 
         Return ArrayLines
 
