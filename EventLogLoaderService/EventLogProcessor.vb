@@ -989,7 +989,7 @@ Public Class EventLogProcessor
 
             LastProcessedObjectForDebug = TextObject
 
-            Dim a = ParserServices.ParseEventLogString(TextObject)
+            Dim a = ParserServices.ParseEventLogString(TextObject.ToString().Trim())
 
             If Not a Is Nothing Then
                 Select Case a(0)
@@ -1029,7 +1029,7 @@ Public Class EventLogProcessor
 
     End Sub
 
-    Sub LoadReference()
+    Sub ClearReference()
 
         'Clear all reference dictionaries
         DictUsers.Clear()
@@ -1041,9 +1041,15 @@ Public Class EventLogProcessor
         DictMainPorts.Clear()
         DictSecondPorts.Clear()
 
+    End Sub
+
+    Sub LoadReference()
+
         Dim FileName = Path.Combine(Catalog, "1Cv8.lgd")
 
         If My.Computer.FileSystem.FileExists(FileName) Then
+
+            ClearReference()
 
             Try
                 Dim Conn = New SQLite.SQLiteConnection("Data Source=" + FileName)
@@ -1129,6 +1135,7 @@ Public Class EventLogProcessor
 
                     If FI.LastWriteTime >= LastReferenceUpdate Then
 
+                        ClearReference()
                         LoadReferenceFromTheTextFile(FileName, LastProcessedObjectForDebug)
 
                     End If
