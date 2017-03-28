@@ -1395,25 +1395,32 @@ Public Class EventLogProcessor
 
     End Sub
 
+    Function FindLineStartPosition(FS As FileStream, SourcePosition As Int64) As Int64
+
+        Dim Position = SourcePosition
+        While Position > 61 ' Magic: 61 - начальное положение
+
+            Position = Position - 1
+            FS.Position = Position
+            If FS.ReadByte() = 10 Then
+
+                ' Нашли конецПредыдущей строки
+                Return FS.Position
+
+            End If
+
+        End While
+
+        Return SourcePosition
+
+    End Function
+
     Sub LoadEvents(FileName As String)
 
         Dim FS As FileStream = New FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-        FS.Position = CurrentPosition
+        FS.Position = FindLineStartPosition(FS, CurrentPosition)
 
         Dim SR As StreamReader = New StreamReader(FS)
-
-
-
-        'Dim TextFile = My.Computer.FileSystem.OpenTextFileReader(FileName)
-
-
-        'TextFile.BaseStream.Position = Events.CurrentPosition  ' учесть, что первые 2 символа служебные, т.е. первый - №3
-        '' + 2 символа перевода каретки в конце каждой строки
-
-        '' '' TEMP
-        ''Dim TextFile2 = My.Computer.FileSystem.OpenTextFileReader(FileName)
-        ''TextFile2.BaseStream.Position = Events.CurrentPosition + 1
-        '' '' TEMP
 
         Dim TextLine = ""
 
@@ -1423,7 +1430,20 @@ Public Class EventLogProcessor
         Dim CountBracket = 0
         Dim TextBlockOpen = False
         Dim Position = CurrentPosition
-        'Dim WasReadSomeString = False
+        Dim StartLinePosition = CurrentPosition
+        Dim FirstLine = True
+
+
+        ' Костыль.
+
+        ' Исходя из того, что предыдущее чтение могло остановитсья в любом положении,
+        ' идём до места, где строка похожа на начало события
+
+        ' TODO: текущее событие оказывается не дочитано, потому (по идее) двигаться надо назад, а не вперёд
+        Dim DatePart = Path.GetFileNameWithoutExtension(FileName).Substring(0, 8)
+        Dim StartLinePattern = "{" + DatePart
+
+        Dim LinesSkiped = 0
 
         While Not TextLine Is Nothing
 
@@ -1431,23 +1451,43 @@ Public Class EventLogProcessor
             TextLine = SR.ReadLine()
 
             If TextLine Is Nothing Then
-                'если чтение прервано на середине, то ничего прибавлять не нужно, если же чтение 
-                'было завершено до конца, а потом читаются новые события, то появляется запятая, которую нужно учеть с ПЛЮС ОДИН позиции
-                'If WasReadSomeString Then
 
-                '    Position = Position + 1
+                If Not NewLine Then
 
-                '    Events.CurrentPosition = Position
+                    ' Если чтение прервано на середине события, нужно откатить позицию
+                    CurrentPosition = StartLinePosition
 
-                'End If
+                End If
+
+                Log.Debug("Last event text: {0}", StrEvent)
 
                 Exit While
 
             End If
 
-            ' WasReadSomeString = True
+            If FirstLine Then
 
-            Position = Position + 2 + Text.Encoding.UTF8.GetBytes(TextLine).Length
+                If TextLine.StartsWith(StartLinePattern) Then
+
+                    FirstLine = False
+                    If LinesSkiped > 0 Then
+                        Log.Debug("Skipped {0} lines!", LinesSkiped)
+                    End If
+
+                Else
+
+                    If Not TextLine = "" Then
+                        LinesSkiped += 1
+                        Log.Debug("Skiped: {0}", TextLine)
+                    End If
+
+                    Continue While
+
+                End If
+
+            End If
+
+            Position = FS.Position
 
             CurrentPosition = Position
 
@@ -1459,6 +1499,7 @@ Public Class EventLogProcessor
 
             If ItsEndOfEvent(TextLine, CountBracket, TextBlockOpen) Then
                 NewLine = True
+                StartLinePosition = CurrentPosition
                 If Not StrEvent Is Nothing And (StrEvent.Length > 1) Then
                     Try
                         AddEvent(StrEvent)
