@@ -94,6 +94,15 @@ Public Class Form1
         If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.UserName) Then
             ConfigSetting.ESFieldSynonyms.UserName = "ИмяПользователя"
         End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.Transaction) Then
+            ConfigSetting.ESFieldSynonyms.Transaction = "ТранзакцияНомер"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.TransactionStartTime) Then
+            ConfigSetting.ESFieldSynonyms.TransactionStartTime = "ТранзакцияВремя"
+        End If
+        If String.IsNullOrEmpty(ConfigSetting.ESFieldSynonyms.TransactionStatus) Then
+            ConfigSetting.ESFieldSynonyms.TransactionStatus = "ТранзакцияСтатус"
+        End If
 
         ConnectionStringBox.Text = ConfigSetting.ConnectionString
         DBType.Text = ConfigSetting.DBType
