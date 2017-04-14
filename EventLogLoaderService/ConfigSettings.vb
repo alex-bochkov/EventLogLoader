@@ -32,6 +32,9 @@ Public Module ConfigSettingsModule
         Public SecondaryPort As String
         Public Application As String
         Public UserName As String
+        Public Transaction As String
+        Public TransactionStatus As String
+        Public TransactionStartTime As String
     End Class
 
     Class ConfigSetting
