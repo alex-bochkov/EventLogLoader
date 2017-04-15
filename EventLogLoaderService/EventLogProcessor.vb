@@ -206,6 +206,9 @@ Public Class EventLogProcessor
         Public SecondaryPort As Integer
         Public Server As String
         Public SessionDataSplitCode As Integer
+        Public TransactionStatus As String
+        Public Transaction As Integer
+        Public TransactionStartTime As Date
     End Class
 
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
@@ -874,6 +877,9 @@ Public Class EventLogProcessor
                 ESRecord.Comment = EventRecord.Comment
                 ESRecord.SessionDataSplitCode = EventRecord.SessionDataSplitCode
 
+                ESRecord.Transaction = EventRecord.TransactionMark
+                ESRecord.TransactionStartTime = EventRecord.TransactionStartTime
+                ESRecord.TransactionStatus = EventRecord.TransactionStatus
 
                 Dim EventObj = New EventType
                 If DictEvents.TryGetValue(EventRecord.EventID, EventObj) Then
@@ -939,6 +945,10 @@ Public Class EventLogProcessor
                     ESRecordUserFields.Add(ESFieldSynonyms.Application, ESRecord.Application)
                     ESRecordUserFields.Add(ESFieldSynonyms.UserName, ESRecord.UserName)
 
+                    ESRecordUserFields.Add(ESFieldSynonyms.Transaction, ESRecord.Transaction)
+                    ESRecordUserFields.Add(ESFieldSynonyms.TransactionStartTime, ESRecord.TransactionStartTime)
+                    ESRecordUserFields.Add(ESFieldSynonyms.TransactionStatus, ESRecord.TransactionStatus)
+
                     NewRecords.Add(ESRecordUserFields)
 
                 Else
@@ -949,9 +959,16 @@ Public Class EventLogProcessor
 
             Next
 
-            Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
-
-            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + NewRecords.Count.ToString)
+            While True
+                Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
+                If Not Result.IsValid Then
+                    Console.WriteLine(Now.ToLongTimeString + " Error writing to the server <" + ConnectionString + ">. Waiting 10 seconds")
+                    Threading.Thread.Sleep(10000)
+                Else
+                    Console.WriteLine(Now.ToLongTimeString + " New records have been processed " + NewRecords.Count.ToString)
+                    Exit While
+                End If
+            End While
 
             SaveReadParametersToFile()
 
@@ -1270,14 +1287,16 @@ Public Class EventLogProcessor
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
 
-                    OneEvent.TransactionStartTime = New Date().AddYears(2000)
+                    ' Try
+                    '     If Not rs("transactionDate") = 0 Then
+                    '         OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
+                    '     Else
+                    '         OneEvent.TransactionStartTime = New Date().AddYears(2000)
+                    '     End If
+                    ' Catch ex As Exception
+                    ' End Try
 
-                    Try
-                        If Not rs("transactionDate") = 0 Then
-                            OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
-                        End If
-                    Catch ex As Exception
-                    End Try
+                    OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
 
                     OneEvent.UserName = rs("userCode")
                     OneEvent.ComputerName = rs("computerCode")
@@ -1309,7 +1328,7 @@ Public Class EventLogProcessor
                     OneEvent.SessionNumber = rs("session")
                     OneEvent.SessionDataSplitCode = rs("sessionDataSplitCode")
 
-                    OneEvent.Transaction = ""
+                    'OneEvent.Transaction = ""
                     OneEvent.EventType = ""
 
                     EventsList.Add(OneEvent)
@@ -1600,7 +1619,7 @@ Public Class EventLogProcessor
 
         While True
 
-            Console.WriteLine(Now.ToShortTimeString + " Start new iteration...")
+            Console.WriteLine(Now.ToLongTimeString + " Start new iteration...")
 
             Try
 
