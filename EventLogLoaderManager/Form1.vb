@@ -14,6 +14,15 @@ Public Class Form1
 
     Dim ConfigSetting As ConfigSetting = New ConfigSetting
 
+    Public Sub New()
+
+        ' This call is required by the designer.
+        InitializeComponent()
+
+        ' Add any initialization after the InitializeComponent() call.
+
+    End Sub
+
     Sub LoadConfigSetting()
 
         ConfigSetting = ConfigSettingsModule.LoadConfigSettingFromFile(PathConfigFile)
@@ -110,6 +119,9 @@ Public Class Form1
         ESIndexNameTextBox.Text = ConfigSetting.ESIndexName
         UseSynonymsForFieldsNamesCheckBox.Checked = ConfigSetting.ESUseSynonymsForFieldsNames
 
+        CheckBoxSplitIndexByPeriods.Checked = Not String.IsNullOrEmpty(ConfigSetting.ESUseIndexPostfix)
+        ComboBoxESIndexPostfix.Text = ConfigSetting.ESUseIndexPostfix
+
     End Sub
 
 
@@ -151,6 +163,10 @@ Public Class Form1
         NewConfigSetting.DBType = DBType.Text.Trim
         NewConfigSetting.ESIndexName = ESIndexNameTextBox.Text
 
+        If CheckBoxSplitIndexByPeriods.Checked Then
+            NewConfigSetting.ESUseIndexPostfix = ComboBoxESIndexPostfix.Text
+        End If
+
         For Each Item As ListViewItem In ListView.Items
             If Item.Checked Then
 
@@ -173,7 +189,6 @@ Public Class Form1
 
         NewConfigSetting.RepeatTime = IIf(Rep = 0, 60, Rep)
         ConfigSettingsModule.SaveConfigSettingToFile(NewConfigSetting, PathConfigFile)
-
 
         Dim sc = New System.ServiceProcess.ServiceController("EventLog loader service")
         Try
@@ -243,6 +258,8 @@ Public Class Form1
         LoadConfigSetting()
 
         RefreshInfobaseList()
+
+        ShowIndexNameExample()
 
     End Sub
 
@@ -561,7 +578,7 @@ Public Class Form1
 
     End Sub
 
-    Private Sub LinkLabel2_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles LinkLabel2.LinkClicked
+    Private Sub LinkLabel2_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs)
         Process.Start("https://github.com/alekseybochkov/")
     End Sub
 
@@ -573,4 +590,29 @@ Public Class Form1
         Process.Start("https://github.com/alekseybochkov/EventLogLoader/")
     End Sub
 
+    Private Sub ESIndexNameTextBox_TextChanged(sender As Object, e As EventArgs) Handles ESIndexNameTextBox.TextChanged
+
+        ShowIndexNameExample()
+
+    End Sub
+
+    Sub ShowIndexNameExample()
+
+        Dim Postfix = ""
+
+        If CheckBoxSplitIndexByPeriods.Checked Then
+            Postfix = Now.ToString(ComboBoxESIndexPostfix.Text)
+        End If
+
+        LabelIndexNameExample.Text = "Пример имени индекса: " + ESIndexNameTextBox.Text + Postfix
+
+    End Sub
+
+    Private Sub ComboBoxESIndexPostfix_TextChanged(sender As Object, e As EventArgs) Handles ComboBoxESIndexPostfix.TextChanged
+        ShowIndexNameExample()
+    End Sub
+
+    Private Sub CheckBoxSplitIndexByPeriods_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBoxSplitIndexByPeriods.CheckedChanged
+        ShowIndexNameExample()
+    End Sub
 End Class

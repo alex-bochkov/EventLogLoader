@@ -214,6 +214,7 @@ Public Class EventLogProcessor
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
 
     Public ESIndexName As String
+    Public ESIndexPostfix As String
     Public ESServerName As String
 
     Public InfobaseName As String
@@ -851,9 +852,25 @@ Public Class EventLogProcessor
             Dim _current = New ElasticClient(_settings)
 
             'Let's create proper array for ES
-            Dim NewRecords As List(Of Object) = New List(Of Object)
+            Dim NewRecordsByIndex As Dictionary(Of String, List(Of Object)) = New Dictionary(Of String, List(Of Object))
+            'Dim NewRecords As List(Of Object) = New List(Of Object)
 
             For Each EventRecord In EventsList
+
+                Dim TargetIndexName = ESIndexName
+                If ESIndexPostfix.Length > 0 Then
+                    Try
+                        TargetIndexName = TargetIndexName + EventRecord.DateTime.ToString(ESIndexPostfix)
+                    Catch ex As Exception
+                    End Try
+                End If
+
+                If Not NewRecordsByIndex.ContainsKey(TargetIndexName) Then
+                    NewRecordsByIndex.Add(TargetIndexName, New List(Of Object))
+                End If
+
+
+
                 Dim ESRecord = New ESRecord With {.ServerName = ESServerName, .DatabaseName = InfobaseName}
                 ESRecord.RowID = EventRecord.RowID
 
@@ -949,26 +966,46 @@ Public Class EventLogProcessor
                     ESRecordUserFields.Add(ESFieldSynonyms.TransactionStartTime, ESRecord.TransactionStartTime)
                     ESRecordUserFields.Add(ESFieldSynonyms.TransactionStatus, ESRecord.TransactionStatus)
 
-                    NewRecords.Add(ESRecordUserFields)
+                    'NewRecords.Add(ESRecordUserFields)
+                    NewRecordsByIndex(TargetIndexName).Add(ESRecordUserFields)
 
                 Else
 
-                    NewRecords.Add(ESRecord)
+                    'NewRecords.Add(ESRecord)
+                    NewRecordsByIndex(TargetIndexName).Add(ESRecord)
 
                 End If
 
             Next
 
-            While True
-                Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
-                If Not Result.IsValid Then
-                    Console.WriteLine(Now.ToLongTimeString + " Error writing to the server <" + ConnectionString + ">. Waiting 10 seconds")
-                    Threading.Thread.Sleep(10000)
-                Else
-                    Console.WriteLine(Now.ToLongTimeString + " New records have been processed " + NewRecords.Count.ToString)
-                    Exit While
-                End If
-            End While
+            For Each NewRecordsKV In NewRecordsByIndex
+
+                Dim AttemptCount = 0
+
+                While True
+
+                    Dim Result = _current.IndexMany(NewRecordsKV.Value, NewRecordsKV.Key, "event-log-record")
+                    If Not Result.IsValid Then
+
+                        If AttemptCount >= 5 Then
+                            Throw New Exception("Writing attempts failed because <" + ConnectionString + "> server did not properly respond!")
+                        End If
+
+                        Console.WriteLine(Now.ToLongTimeString + " Error writing to the server <" + ConnectionString + ">. " + Result.OriginalException.Message + ". Waiting for 10 seconds...")
+                        Threading.Thread.Sleep(10000)
+
+                    Else
+                        Console.WriteLine(Now.ToLongTimeString + " -> " + NewRecordsKV.Value.Count.ToString + " new records have been written to '" + NewRecordsKV.Key + "' index")
+                        Exit While
+                    End If
+
+                    AttemptCount = AttemptCount + 1
+
+                End While
+
+            Next
+
+
 
             SaveReadParametersToFile()
 
@@ -1287,16 +1324,14 @@ Public Class EventLogProcessor
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
 
-                    ' Try
-                    '     If Not rs("transactionDate") = 0 Then
-                    '         OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
-                    '     Else
-                    '         OneEvent.TransactionStartTime = New Date().AddYears(2000)
-                    '     End If
-                    ' Catch ex As Exception
-                    ' End Try
-
-                    OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
+                    Try
+                        If Not rs("transactionDate") = 0 Then
+                            OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
+                        Else
+                            OneEvent.TransactionStartTime = New Date().AddYears(2000)
+                        End If
+                    Catch ex As Exception
+                    End Try
 
                     OneEvent.UserName = rs("userCode")
                     OneEvent.ComputerName = rs("computerCode")

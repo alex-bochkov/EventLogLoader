@@ -42,6 +42,7 @@ Public Module ConfigSettingsModule
         Public DBType As String = ""
         Public RepeatTime As Integer = 0
         Public ESIndexName As String = ""
+        Public ESUseIndexPostfix As String = ""
         Public ESUseSynonymsForFieldsNames As Boolean = False
         Public ESFieldSynonyms As ElasticSearchFieldSynonymsClass
         Public Infobases As List(Of InfobaseSetting)
