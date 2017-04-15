@@ -130,9 +130,6 @@
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="EventLogLoaderDebug_1_TemporaryKey.pfx" />
-    <None Include="EventLogLoaderDebug_2_TemporaryKey.pfx" />
-    <None Include="EventLogLoaderDebug_TemporaryKey.pfx" />
     <None Include="My Project\Application.myapp">
       <Generator>MyApplicationCodeGenerator</Generator>
       <LastGenOutput>Application.Designer.vb</LastGenOutput>

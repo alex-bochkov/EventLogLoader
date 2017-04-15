@@ -206,11 +206,15 @@ Public Class EventLogProcessor
         Public SecondaryPort As Integer
         Public Server As String
         Public SessionDataSplitCode As Integer
+        Public TransactionStatus As String
+        Public Transaction As Integer
+        Public TransactionStartTime As Date
     End Class
 
     Public EventsList As List(Of OneEventRecord) = New List(Of OneEventRecord)
 
     Public ESIndexName As String
+    Public ESIndexPostfix As String
     Public ESServerName As String
 
     Public InfobaseName As String
@@ -848,9 +852,25 @@ Public Class EventLogProcessor
             Dim _current = New ElasticClient(_settings)
 
             'Let's create proper array for ES
-            Dim NewRecords As List(Of Object) = New List(Of Object)
+            Dim NewRecordsByIndex As Dictionary(Of String, List(Of Object)) = New Dictionary(Of String, List(Of Object))
+            'Dim NewRecords As List(Of Object) = New List(Of Object)
 
             For Each EventRecord In EventsList
+
+                Dim TargetIndexName = ESIndexName
+                If ESIndexPostfix.Length > 0 Then
+                    Try
+                        TargetIndexName = TargetIndexName + EventRecord.DateTime.ToString(ESIndexPostfix)
+                    Catch ex As Exception
+                    End Try
+                End If
+
+                If Not NewRecordsByIndex.ContainsKey(TargetIndexName) Then
+                    NewRecordsByIndex.Add(TargetIndexName, New List(Of Object))
+                End If
+
+
+
                 Dim ESRecord = New ESRecord With {.ServerName = ESServerName, .DatabaseName = InfobaseName}
                 ESRecord.RowID = EventRecord.RowID
 
@@ -874,6 +894,9 @@ Public Class EventLogProcessor
                 ESRecord.Comment = EventRecord.Comment
                 ESRecord.SessionDataSplitCode = EventRecord.SessionDataSplitCode
 
+                ESRecord.Transaction = EventRecord.TransactionMark
+                ESRecord.TransactionStartTime = EventRecord.TransactionStartTime
+                ESRecord.TransactionStatus = EventRecord.TransactionStatus
 
                 Dim EventObj = New EventType
                 If DictEvents.TryGetValue(EventRecord.EventID, EventObj) Then
@@ -939,19 +962,50 @@ Public Class EventLogProcessor
                     ESRecordUserFields.Add(ESFieldSynonyms.Application, ESRecord.Application)
                     ESRecordUserFields.Add(ESFieldSynonyms.UserName, ESRecord.UserName)
 
-                    NewRecords.Add(ESRecordUserFields)
+                    ESRecordUserFields.Add(ESFieldSynonyms.Transaction, ESRecord.Transaction)
+                    ESRecordUserFields.Add(ESFieldSynonyms.TransactionStartTime, ESRecord.TransactionStartTime)
+                    ESRecordUserFields.Add(ESFieldSynonyms.TransactionStatus, ESRecord.TransactionStatus)
+
+                    'NewRecords.Add(ESRecordUserFields)
+                    NewRecordsByIndex(TargetIndexName).Add(ESRecordUserFields)
 
                 Else
 
-                    NewRecords.Add(ESRecord)
+                    'NewRecords.Add(ESRecord)
+                    NewRecordsByIndex(TargetIndexName).Add(ESRecord)
 
                 End If
 
             Next
 
-            Dim Result = _current.IndexMany(NewRecords, ESIndexName, "event-log-record")
+            For Each NewRecordsKV In NewRecordsByIndex
 
-            Console.WriteLine(Now.ToShortTimeString + " New records have been processed " + NewRecords.Count.ToString)
+                Dim AttemptCount = 0
+
+                While True
+
+                    Dim Result = _current.IndexMany(NewRecordsKV.Value, NewRecordsKV.Key, "event-log-record")
+                    If Not Result.IsValid Then
+
+                        If AttemptCount >= 5 Then
+                            Throw New Exception("Writing attempts failed because <" + ConnectionString + "> server did not properly respond!")
+                        End If
+
+                        Console.WriteLine(Now.ToLongTimeString + " Error writing to the server <" + ConnectionString + ">. " + Result.OriginalException.Message + ". Waiting for 10 seconds...")
+                        Threading.Thread.Sleep(10000)
+
+                    Else
+                        Console.WriteLine(Now.ToLongTimeString + " -> " + NewRecordsKV.Value.Count.ToString + " new records have been written to '" + NewRecordsKV.Key + "' index")
+                        Exit While
+                    End If
+
+                    AttemptCount = AttemptCount + 1
+
+                End While
+
+            Next
+
+
 
             SaveReadParametersToFile()
 
@@ -1270,11 +1324,11 @@ Public Class EventLogProcessor
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
 
-                    OneEvent.TransactionStartTime = New Date().AddYears(2000)
-
                     Try
                         If Not rs("transactionDate") = 0 Then
                             OneEvent.TransactionStartTime = New Date().AddSeconds(Convert.ToInt64(rs("transactionDate") / 10000))
+                        Else
+                            OneEvent.TransactionStartTime = New Date().AddYears(2000)
                         End If
                     Catch ex As Exception
                     End Try
@@ -1309,7 +1363,7 @@ Public Class EventLogProcessor
                     OneEvent.SessionNumber = rs("session")
                     OneEvent.SessionDataSplitCode = rs("sessionDataSplitCode")
 
-                    OneEvent.Transaction = ""
+                    'OneEvent.Transaction = ""
                     OneEvent.EventType = ""
 
                     EventsList.Add(OneEvent)
@@ -1600,7 +1654,7 @@ Public Class EventLogProcessor
 
         While True
 
-            Console.WriteLine(Now.ToShortTimeString + " Start new iteration...")
+            Console.WriteLine(Now.ToLongTimeString + " Start new iteration...")
 
             Try
 
