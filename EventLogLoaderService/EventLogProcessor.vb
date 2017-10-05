@@ -876,7 +876,7 @@ Public Class EventLogProcessor
                         ESRecord.Severity = "Note"
                 End Select
 
-                ESRecord.DateTime = EventRecord.DateTime.ToUniversalTime()
+                ESRecord.DateTime = EventRecord.DateTime
                 ESRecord.ConnectID = EventRecord.ConnectID
                 ESRecord.DataType = EventRecord.DataType
                 ESRecord.SessionNumber = EventRecord.SessionNumber
@@ -1336,7 +1336,7 @@ Public Class EventLogProcessor
                     OneEvent.Severity = rs("severity")
 
                     OneEvent.ConnectID = rs("connectID")
-                    OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000))
+                    OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000)) ' date-time in UTC
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
 
@@ -1630,7 +1630,8 @@ Public Class EventLogProcessor
         Dim OneEvent As OneEventRecord = New OneEventRecord
 
         Dim Array = ParserServices.ParseEventLogString(Str)
-        OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
+        OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider) ' local date-time
+        OneEvent.DateTime = OneEvent.DateTime.ToUniversalTime
         OneEvent.TransactionStatus = Array(1)
 
         If OneEvent.DateTime < LoadEventsStartingAt Then
@@ -1648,7 +1649,7 @@ Public Class EventLogProcessor
             End If
         Catch ex As Exception
         End Try
-
+        OneEvent.TransactionStartTime = OneEvent.TransactionStartTime.ToUniversalTime
         OneEvent.TransactionMark = From16To10(TransStr.Substring(TransStr.IndexOf(",") + 1))
 
         OneEvent.Transaction = Array(2)
