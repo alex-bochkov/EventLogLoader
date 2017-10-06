@@ -772,7 +772,15 @@ Public Class EventLogProcessor
                     copy.ColumnMappings.Add(jj, jj)
                 Next
                 copy.DestinationTableName = "Events"
-                copy.WriteToServer(dt)
+                Try
+                    copy.WriteToServer(dt)
+                Catch ex As InvalidOperationException
+                    Log.Error("Ошибка сохранения в БД записи по ИБ " + InfobaseName + " : " + ex.Message)
+                Catch ex As Exception
+                    Log.Error("Ошибка сохранения в БД записи по ИБ " + InfobaseName + " : " + ex.Message)
+                End Try
+                'InvalidOperationException
+
             End Using
 
             SaveReadParametersToFile()
@@ -1035,7 +1043,7 @@ Public Class EventLogProcessor
 
             LastProcessedObjectForDebug = TextObject
 
-            Dim a = ParserServices.ParseEventLogString(TextObject)
+            Dim a = ParserServices.ParseEventLogString(TextObject.ToString().Trim())
 
             If Not a Is Nothing Then
                 Select Case a(0)
@@ -1075,7 +1083,7 @@ Public Class EventLogProcessor
 
     End Sub
 
-    Sub LoadReference()
+    Sub ClearReference()
 
         'Clear all reference dictionaries
         DictUsers.Clear()
@@ -1087,9 +1095,15 @@ Public Class EventLogProcessor
         DictMainPorts.Clear()
         DictSecondPorts.Clear()
 
+    End Sub
+
+    Sub LoadReference()
+
         Dim FileName = Path.Combine(Catalog, "1Cv8.lgd")
 
         If My.Computer.FileSystem.FileExists(FileName) Then
+
+            ClearReference()
 
             Try
                 Dim Conn = New SQLite.SQLiteConnection("Data Source=" + FileName)
@@ -1175,6 +1189,7 @@ Public Class EventLogProcessor
 
                     If FI.LastWriteTime >= LastReferenceUpdate Then
 
+                        ClearReference()
                         LoadReferenceFromTheTextFile(FileName, LastProcessedObjectForDebug)
 
                     End If
@@ -1239,7 +1254,45 @@ Public Class EventLogProcessor
 
                 System.Array.Sort(ArrayFiles)
 
+                ' В случае с файловым журналом отсечём те файлы, которые заведомо не будут загружаться
+
+                Dim ArrayFilesToProcess(0) As String
+                Dim FileCount = 0
+
+                System.Array.Reverse(ArrayFiles)
                 For Each File In ArrayFiles
+
+                    Dim FI = My.Computer.FileSystem.GetFileInfo(File)
+                    Dim DateTimePart = FI.Name.Substring(0, "yyyyMMddHHmmss".Length)
+                    Dim Last = False
+
+                    Try
+
+                        Dim FileStartDateTime = Date.ParseExact(DateTimePart, "yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+                        If FileStartDateTime <= LoadEventsStartingAt
+
+                            ' Берём только один файл из тех, чья дата начала меньше даты отбора.
+                            ' Все файлы младше заведомо не содержат данных, подходящих под отбор по дате
+                            Last = True
+
+                        End If
+
+                    Catch
+                    End Try
+
+                    ReDim Preserve ArrayFilesToProcess (FileCount)
+                    ArrayFilesToProcess(FileCount) = File
+                    FileCount += 1
+
+                    If Last
+                        Exit For
+                    End If
+
+                Next
+
+                System.Array.Reverse(ArrayFilesToProcess)
+
+                For Each File In ArrayFilesToProcess
                     If Not File Is Nothing Then
                         Try
                             Dim FI = My.Computer.FileSystem.GetFileInfo(File)
@@ -1320,7 +1373,7 @@ Public Class EventLogProcessor
                     OneEvent.Severity = rs("severity")
 
                     OneEvent.ConnectID = rs("connectID")
-                    OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000))
+                    OneEvent.DateTime = New Date().AddSeconds(Convert.ToInt64(rs("date") / 10000)) ' date-time in UTC
                     OneEvent.TransactionStatus = rs("transactionStatus")
                     OneEvent.TransactionMark = rs("transactionID")
 
@@ -1396,25 +1449,32 @@ Public Class EventLogProcessor
 
     End Sub
 
+    Function FindLineStartPosition(FS As FileStream, SourcePosition As Int64) As Int64
+
+        Dim Position = SourcePosition
+        While Position > 61 ' Magic: 61 - начальное положение
+
+            Position = Position - 1
+            FS.Position = Position
+            If FS.ReadByte() = 10 Then
+
+                ' Нашли конецПредыдущей строки
+                Return FS.Position
+
+            End If
+
+        End While
+
+        Return SourcePosition
+
+    End Function
+
     Sub LoadEvents(FileName As String)
 
         Dim FS As FileStream = New FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-        FS.Position = CurrentPosition
+        FS.Position = FindLineStartPosition(FS, CurrentPosition)
 
         Dim SR As StreamReader = New StreamReader(FS)
-
-
-
-        'Dim TextFile = My.Computer.FileSystem.OpenTextFileReader(FileName)
-
-
-        'TextFile.BaseStream.Position = Events.CurrentPosition  ' учесть, что первые 2 символа служебные, т.е. первый - №3
-        '' + 2 символа перевода каретки в конце каждой строки
-
-        '' '' TEMP
-        ''Dim TextFile2 = My.Computer.FileSystem.OpenTextFileReader(FileName)
-        ''TextFile2.BaseStream.Position = Events.CurrentPosition + 1
-        '' '' TEMP
 
         Dim TextLine = ""
 
@@ -1424,7 +1484,20 @@ Public Class EventLogProcessor
         Dim CountBracket = 0
         Dim TextBlockOpen = False
         Dim Position = CurrentPosition
-        'Dim WasReadSomeString = False
+        Dim StartLinePosition = CurrentPosition
+        Dim FirstLine = True
+
+
+        ' Костыль.
+
+        ' Исходя из того, что предыдущее чтение могло остановитсья в любом положении,
+        ' идём до места, где строка похожа на начало события
+
+        ' TODO: текущее событие оказывается не дочитано, потому (по идее) двигаться надо назад, а не вперёд
+        Dim DatePart = Path.GetFileNameWithoutExtension(FileName).Substring(0, 8)
+        Dim StartLinePattern = "{" + DatePart
+
+        Dim LinesSkiped = 0
 
         While Not TextLine Is Nothing
 
@@ -1432,23 +1505,43 @@ Public Class EventLogProcessor
             TextLine = SR.ReadLine()
 
             If TextLine Is Nothing Then
-                'если чтение прервано на середине, то ничего прибавлять не нужно, если же чтение 
-                'было завершено до конца, а потом читаются новые события, то появляется запятая, которую нужно учеть с ПЛЮС ОДИН позиции
-                'If WasReadSomeString Then
 
-                '    Position = Position + 1
+                If Not NewLine Then
 
-                '    Events.CurrentPosition = Position
+                    ' Если чтение прервано на середине события, нужно откатить позицию
+                    CurrentPosition = StartLinePosition
 
-                'End If
+                End If
+
+                Log.Debug("Last event text: {0}", StrEvent)
 
                 Exit While
 
             End If
 
-            ' WasReadSomeString = True
+            If FirstLine Then
 
-            Position = Position + 2 + Text.Encoding.UTF8.GetBytes(TextLine).Length
+                If TextLine.StartsWith(StartLinePattern) Then
+
+                    FirstLine = False
+                    If LinesSkiped > 0 Then
+                        Log.Debug("Skipped {0} lines!", LinesSkiped)
+                    End If
+
+                Else
+
+                    If Not TextLine = "" Then
+                        LinesSkiped += 1
+                        Log.Debug("Skiped: {0}", TextLine)
+                    End If
+
+                    Continue While
+
+                End If
+
+            End If
+
+            Position = FS.Position
 
             CurrentPosition = Position
 
@@ -1460,11 +1553,12 @@ Public Class EventLogProcessor
 
             If ItsEndOfEvent(TextLine, CountBracket, TextBlockOpen) Then
                 NewLine = True
-                If Not StrEvent Is Nothing Then
+                StartLinePosition = CurrentPosition
+                If Not StrEvent Is Nothing And (StrEvent.Length > 1) Then
                     Try
                         AddEvent(StrEvent)
                     Catch ex As Exception
-
+                        Log.Error(ex.Message)
                     End Try
 
                     '***
@@ -1501,7 +1595,7 @@ Public Class EventLogProcessor
             End If
         Next
 
-        ItsEndOfEvent = (Count = 0)
+        ItsEndOfEvent = (Count = 0) And Not TextBlockOpen
 
     End Function
 
@@ -1571,7 +1665,8 @@ Public Class EventLogProcessor
         Dim OneEvent As OneEventRecord = New OneEventRecord
 
         Dim Array = ParserServices.ParseEventLogString(Str)
-        OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider)
+        OneEvent.DateTime = Date.ParseExact(Array(0), "yyyyMMddHHmmss", provider) ' local date-time
+        OneEvent.DateTime = OneEvent.DateTime.ToUniversalTime
         OneEvent.TransactionStatus = Array(1)
 
         If OneEvent.DateTime < LoadEventsStartingAt Then
@@ -1589,7 +1684,7 @@ Public Class EventLogProcessor
             End If
         Catch ex As Exception
         End Try
-
+        OneEvent.TransactionStartTime = OneEvent.TransactionStartTime.ToUniversalTime
         OneEvent.TransactionMark = From16To10(TransStr.Substring(TransStr.IndexOf(",") + 1))
 
         OneEvent.Transaction = Array(2)
